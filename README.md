@@ -124,7 +124,7 @@ Use [API, health, and metrics](docs/API.md), [Operations](docs/OPERATIONS.md), a
 
 - **Website and hosted account workflow:** [agataproxima.com](https://agataproxima.com)
 - **Plans and billing:** use the current plan and billing information shown through the official hosted account workflow. See [Plans and billing](docs/BILLING.md) for how plan limits and upgrades are described.
-- **Support:** [support@agataproxima.com](mailto:support@agataproxima.com). Email availability depends on the domain's mail routing being configured; if email does not work, use the official website.
+- **Support:** [support@agataproxima.com](mailto:support@agataproxima.com)
 - **Security vulnerabilities:** do not post exploitable details publicly. Follow [SECURITY.md](SECURITY.md).
 
 ## Open-source scope and brand

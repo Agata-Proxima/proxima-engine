@@ -9,6 +9,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     name: Test engine
@@ -38,3 +42,5 @@ jobs:
         run: cargo test -p proxima-engine
       - name: Build release engine
         run: cargo build -p proxima-engine --release
+      - name: Build container image
+        run: docker build -t proxima-engine:ci .

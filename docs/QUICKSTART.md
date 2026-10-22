@@ -1,70 +1,96 @@
-# Quickstart
+# Quickstart: run Proxima and query PostgreSQL
 
-This guide builds Proxima Engine and connects a PostgreSQL client through its local TCP proxy. It does not provision PostgreSQL or create an account in the hosted Agata Proxima service.
+This walkthrough starts a real PostgreSQL database and the Engine, sends a SQL query through the Engine, and checks health and metrics. You do not need a hosted account or a pre-existing database.
 
-## 1. Prerequisites
+## Requirements
 
-- Stable Rust toolchain with `cargo`
-- A PostgreSQL server that is already running and reachable
-- `psql` or another PostgreSQL client
-- Network access to download Rust dependencies
+- Git
+- Docker Desktop (Windows/macOS) or Docker Engine + Docker Compose (Linux)
+- For the optional native build: stable Rust and Cargo
+- For host-side examples: `curl` and `psql`; the Compose walkthrough runs `psql` inside the database container
 
-## 2. Clone, test, and build
+## 1. Start the stack
 
 ```bash
 git clone https://github.com/Agata-Proxima/proxima-engine.git
 cd proxima-engine
-cargo test -p proxima-engine
-cargo build -p proxima-engine --release
+docker compose -f compose.dev.yaml up --build -d
 ```
 
-## 3. Configure a local proxy
+PowerShell users can run the same Docker command. If you want to edit local settings first, copy the example environment file with `Copy-Item .env.example .env` in PowerShell or `cp .env.example .env` in Bash.
 
-The defaults bind the PostgreSQL proxy to `127.0.0.1:6432` and target PostgreSQL at `127.0.0.1:5432`. Set these explicitly if your database uses different addresses:
+This development profile starts:
+- PostgreSQL on a private Compose network.
+- Proxima on port 6432, published to host loopback only.
+- The local status page on `127.0.0.1:9080`.
+- Health and Prometheus metrics on `127.0.0.1:9090`.
+
+The database password is `local-only-change-me`. It is for local development only and must never be reused outside this profile.
+
+## 2. Confirm the Engine is up
 
 ```bash
-export PROXIMA_LISTEN_ADDR=127.0.0.1:6432
+curl -fsS http://127.0.0.1:9090/healthz
+curl -fsS http://127.0.0.1:9080/health
+curl -fsS http://127.0.0.1:9080/api/status
+```
+
+The health routes return `ok`. The JSON status route reports whether tenant-token enforcement and TLS are configured, plus the listener/upstream settings and connection limit. Do not publish the dashboard or metrics listener to an untrusted network.
+
+In Windows PowerShell, use `Invoke-RestMethod http://127.0.0.1:9090/healthz`, `Invoke-RestMethod http://127.0.0.1:9080/health`, and `Invoke-RestMethod http://127.0.0.1:9080/api/status` instead of the Unix-style `curl -fsS` commands.
+
+## 3. Create a table in PostgreSQL
+
+This command connects directly to the local database to create test data:
+
+```bash
+docker compose -f compose.dev.yaml exec postgres psql -U proxima -d appdb -c "CREATE TABLE IF NOT EXISTS quickstart_messages (message text NOT NULL); TRUNCATE quickstart_messages; INSERT INTO quickstart_messages VALUES ('hello through Proxima');"
+```
+
+## 4. Read that data through Proxima
+
+Now the client connects to the Engine, not directly to PostgreSQL:
+
+```bash
+docker compose -f compose.dev.yaml exec postgres psql "host=engine port=6432 dbname=appdb user=proxima password=local-only-change-me sslmode=disable" -c "SELECT * FROM quickstart_messages;"
+```
+
+Expected result: one row containing `hello through Proxima`. You have verified a real PostgreSQL query through the proxy.
+
+## 5. Inspect metrics
+
+```bash
+curl -fsS http://127.0.0.1:9090/metrics
+```
+
+Look for names such as `proxima_engine_connections_accepted_total`, `proxima_engine_active_connections`, and `proxima_engine_processed_queries_total`. Metrics are process-local counters; restarting the Engine resets them.
+
+## 6. Stop the stack
+
+```bash
+docker compose -f compose.dev.yaml down
+```
+
+The named volumes remain so the local database can be reused. To permanently delete this disposable development data, use `docker compose -f compose.dev.yaml down -v`. Do not use `-v` if you need the data.
+
+## What this quickstart proves — and what it does not
+
+It proves that the container builds, PostgreSQL starts, the Engine accepts a PostgreSQL connection, the query reaches the database, and the health/metrics listeners respond.
+
+The default Compose profile intentionally leaves tenant-token enforcement off so a first connection is simple. **It does not prove tenant isolation, TLS enforcement, production readiness, or compatibility with every driver.** Continue with [Tenant isolation](TENANT_ISOLATION.md), [Security](SECURITY.md), and [Deployment](DEPLOYMENT.md) before handling sensitive workloads.
+
+## Run natively without Docker
+
+If PostgreSQL is already available at `127.0.0.1:5432`:
+
+```bash
+cargo test -p proxima-engine
+cargo build -p proxima-engine --release
 export PROXIMA_UPSTREAM_ADDR=127.0.0.1:5432
+export PROXIMA_LISTEN_ADDR=127.0.0.1:6432
 cargo run -p proxima-engine
 ```
 
-Keep the process running. The database target must accept the credentials you use in the client.
+On PowerShell, set the two variables with `$env:PROXIMA_UPSTREAM_ADDR = "127.0.0.1:5432"` and `$env:PROXIMA_LISTEN_ADDR = "127.0.0.1:6432"`, then run `cargo run -p proxima-engine`.
 
-## 4. Connect through the engine
-
-In a second terminal, use your own database name and user:
-
-```bash
-psql "host=127.0.0.1 port=6432 dbname=postgres user=YOUR_DATABASE_USER"
-```
-
-Run a harmless query such as `SELECT version();`. If the connection fails, confirm PostgreSQL is reachable directly at the configured upstream address, the database and user exist, and the engine logs do not show a configuration or connection error.
-
-## 5. Inspect local status
-
-With the default local dashboard enabled, open [http://127.0.0.1:9080/](http://127.0.0.1:9080/) in a browser. Its health route is [http://127.0.0.1:9080/health](http://127.0.0.1:9080/health), and its status route is [http://127.0.0.1:9080/api/status](http://127.0.0.1:9080/api/status).
-
-These are local engine status routes, not the hosted Agata Proxima customer dashboard or its control-plane API. Keep the dashboard bound to loopback unless you have added and reviewed appropriate network access controls.
-
-## 6. Configure security before shared use
-
-The quickstart is deliberately local. Before connecting other machines or handling real workloads:
-
-- Review [Configuration](CONFIGURATION.md) and [Security](SECURITY.md).
-- Configure client TLS and upstream TLS where required by your environment.
-- Use a strong tenant signing key when tenant-token verification is part of your deployment.
-- Restrict network access to the proxy, dashboard, and metrics listener.
-- Store secrets in a secret manager or protected runtime environment, never in source control.
-- Test failure, restart, and recovery behavior in your own environment.
-
-## Troubleshooting
-
-| Symptom | Check |
-| --- | --- |
-| Engine exits at startup | Read the validation error; verify address formats and paired TLS certificate/key settings. |
-| Connection refused | Confirm PostgreSQL is running and reachable at `PROXIMA_UPSTREAM_ADDR`. |
-| Client cannot connect to proxy | Confirm the engine is running and your client targets `PROXIMA_LISTEN_ADDR`. |
-| TLS configuration error | Follow the requirements in [Configuration](CONFIGURATION.md). |
-| Tenant verification rejects a session | Check the signing-key configuration and the token's signature, expiry, and tenant context. |
-
-For a reproducible engine defect, open an issue with the steps, expected result, actual result, and sanitized logs. Never post credentials, signing keys, or customer data.
+Connect your client to port 6432. The Engine reads configuration from its process environment; see [Configuration](CONFIGURATION.md).

@@ -1,35 +1,44 @@
-# Contributing
+# Contributing to Proxima Engine
 
-Thank you for considering a contribution to Agata Proxima Engine.
+Thanks for considering a contribution. This repository contains the public Rust Engine; changes to a separate hosted management service do not belong here.
 
-## Before opening an issue
+## Before you start
 
-Search existing issues first. For security vulnerabilities, do not open a public issue; follow [SECURITY.md](SECURITY.md).
+- Search [existing issues](https://github.com/Agata-Proxima/proxima-engine/issues) before opening a new one.
+- For a vulnerability, follow [SECURITY.md](SECURITY.md); do not publish exploit details in a public issue.
+- For meaningful behavior changes, open an issue first so the expected behavior can be agreed.
 
-## Development workflow
+## Local setup
 
-1. Fork the repository and create a focused branch.
-2. Keep changes limited to one concern where practical.
-3. Add or update tests for behavior changes and bug fixes.
-4. Run the checks below.
-5. Open a pull request with the motivation, implementation summary, test results, compatibility impact, and any security implications.
+Install a stable Rust toolchain and Docker with Compose. Start the disposable local stack when testing database connectivity:
 
-## Required local checks
+```bash
+docker compose -f compose.dev.yaml up --build -d
+```
 
-- cargo test -p proxima-engine
-- cargo build -p proxima-engine --release
+Run the standard checks:
 
-The GitHub Actions workflow runs these commands for pushes to and pull requests against main.
+```bash
+cargo fmt --all -- --check
+cargo test -p proxima-engine
+cargo build -p proxima-engine --release
+docker build -t proxima-engine:contribution .
+```
 
-## Review expectations
+The PostgreSQL integration test requires the disposable database configuration documented in [Verification](docs/VERIFICATION.md). Do not point destructive integration tests at a database containing data you need.
 
-- Prefer clear, idiomatic Rust and explicit error handling.
-- Avoid logging credentials, signing keys, tenant tokens, or sensitive connection data.
-- Do not add production secrets, customer information, or private platform code.
-- Explain changes to protocol behavior, tenant-token validation, TLS, attestation, or emergency-access controls carefully.
-- Update documentation when environment variables, defaults, security assumptions, or public behavior changes.
-- Do not claim security certification or guarantees that have not been independently established.
+## Pull request checklist
 
-## Scope
+- [ ] Explain the user problem and intended behavior.
+- [ ] Add or update tests for behavior changes.
+- [ ] Run the relevant Rust tests and release build.
+- [ ] Update docs when configuration, endpoints, security assumptions, or examples change.
+- [ ] Explain compatibility and security impact.
+- [ ] Remove credentials, private keys, local state, and customer data from the diff.
+- [ ] Do not claim an audit, certification, or performance result without evidence.
 
-This repository contains the public engine component. Changes to the private hosted control plane, commercial platform, customer account surfaces, or billing system do not belong here.
+Keep changes focused and error handling explicit. Never log tenant tokens, passwords, signing keys, enrollment tokens, or full connection strings.
+
+## Project scope
+
+Proxima Engine, its source, tests, local status page, configuration, and documentation are maintained here. The hosted control plane and its private management application are separate and are not part of this repository.

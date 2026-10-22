@@ -33,9 +33,11 @@ docker compose -f compose.dev.yaml up --build -d
 Check that the engine and its local PostgreSQL database are running:
 
 ```bash
-curl http://127.0.0.1:9090/healthz
-curl http://127.0.0.1:9080/api/status
+curl -fsS http://127.0.0.1:9090/healthz
+curl -fsS http://127.0.0.1:9080/api/status
 ```
+
+**Windows PowerShell:** use `Copy-Item .env.example .env` instead of `cp`, and `Invoke-RestMethod http://127.0.0.1:9090/healthz` / `Invoke-RestMethod http://127.0.0.1:9080/api/status` instead of `curl -fsS`.
 
 Run a real query through the engine:
 

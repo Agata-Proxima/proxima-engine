@@ -9,7 +9,7 @@ Proxima Engine is primarily a PostgreSQL wire-protocol proxy. It is **not** a ge
 | PostgreSQL proxy | `127.0.0.1:6432` | Accepts PostgreSQL client connections and forwards sessions to the configured upstream database. |
 | Upstream PostgreSQL | `127.0.0.1:5432` | Database target configured by `PROXIMA_UPSTREAM_ADDR`. |
 | Local status dashboard | `127.0.0.1:9080` | Optional embedded dashboard and read-only local status routes. |
-| Metrics listener | Configured by the engine's metrics listener settings | Exposes Prometheus-formatted engine metrics. Check the current [metrics implementation](../crates/proxima-engine/src/metrics.rs) and startup logs for the configured address. |
+| Metrics listener | `127.0.0.1:9090` (`PROXIMA_METRICS_LISTEN_ADDR`) | Prometheus metrics at `/metrics`; health at `/health` and `/healthz`. |
 
 Defaults are intended for local development. Do not assume a listener is authenticated merely because it is local in a development setup; bind to loopback and restrict access at the network layer.
 
@@ -41,7 +41,7 @@ The current embedded handler is intentionally small. It is not a customer-manage
 
 The engine exposes Prometheus-formatted operational metrics through its metrics listener. Metric names and descriptions are defined in [metrics.rs](../crates/proxima-engine/src/metrics.rs). They include connection counts, sessions, processed query messages, bytes forwarded, security-breaker activity, and query latency observations.
 
-Use the configured metrics address from startup logs and configure your Prometheus scrape target accordingly. Do not expose metrics publicly without appropriate network restrictions.
+The default scrape URL is `http://127.0.0.1:9090/metrics`. Health checks are available at `http://127.0.0.1:9090/health` and `/healthz`. Override the listener with `PROXIMA_METRICS_LISTEN_ADDR`. Configure your Prometheus scrape target accordingly. Do not expose metrics publicly without appropriate network restrictions.
 
 ## Node enrollment, hosted API keys, and webhooks
 

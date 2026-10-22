@@ -1,43 +1,77 @@
 # Architecture
 
-## Component boundary
+Agata Proxima is security infrastructure for multi-tenant applications. Proxima Engine is the public Rust data-plane process in this repository. It sits between a PostgreSQL client and an existing PostgreSQL server; it does not replace the database, an ORM, or application-level authorization.
 
-proxima-engine is the public Rust runtime component. The hosted Agata Proxima control plane is a separate, private repository and is not included in this source tree.
+## Request path
 
-At a high level, the engine accepts client connections, parses PostgreSQL protocol messages, applies configured tenant/session controls, and connects to an upstream database. It also contains TLS handling, metrics, an embedded status dashboard, and attestation-related tooling.
+```mermaid
+flowchart LR
+  App["Application / PostgreSQL driver"] -->|"TCP + PostgreSQL startup"| Engine["Proxima Engine"]
+  Engine -->|"verified tenant → DB role"| DB[("PostgreSQL")]
+  Engine --> Status["Local status + health"]
+  Engine --> Metrics["Prometheus metrics"]
+  Engine --> Ledger["Signed local attestation ledger"]
+```
 
-## Source map
+A normal connection proceeds through these stages:
 
-| Module | Responsibility |
+1. Accept a client TCP connection and apply the configured connection limit.
+2. Negotiate PostgreSQL startup and TLS according to the listener configuration.
+3. If tenant enforcement is configured, extract the tenant token from startup parameters or the PostgreSQL `options` field.
+4. Verify the token version, tenant identifier, expiry, and HMAC-SHA256 signature. Reject invalid or missing context.
+5. Normalize the tenant identifier and rewrite the upstream PostgreSQL username to `<role-prefix><tenant-id>`.
+6. Connect to the configured PostgreSQL upstream and broker its authentication handshake.
+7. Relay PostgreSQL messages for the lifetime of that physical session, then record connection/query metrics.
+
+The Engine does not pool and retarget one physical PostgreSQL session between tenants. Each accepted client connection has its own upstream session.
+
+## Tenant token contract
+
+The standard token format is:
+
+```text
+v1.<tenant_id>.<expires_at_unix_seconds>.<hex_hmac_sha256>
+```
+
+The signature covers the exact UTF-8 payload `v1.<tenant_id>.<expires_at_unix_seconds>`. The signing secret must be at least 32 bytes. Tenant IDs are restricted to ASCII letters, numbers, hyphens, and underscores. Hyphens become underscores when deriving the PostgreSQL role name; the final role must fit PostgreSQL's 63-byte identifier limit.
+
+For libpq-compatible clients, send the token in startup options as `-c proxima_tenant_token=<signed-token>`. The Engine removes the private option before forwarding startup. The signing key must stay on trusted servers; a tenant ID supplied by a client is not proof of authorization.
+
+## PostgreSQL remains the database security layer
+
+Proxima routes a verified session to a tenant-specific PostgreSQL role. PostgreSQL grants, role attributes, schemas, and Row-Level Security policies still decide what that role can access. Use ordinary non-superuser roles, avoid `BYPASSRLS`, consider `FORCE ROW LEVEL SECURITY`, and remove alternate privileged paths that could bypass the Engine.
+
+Proxima does not automatically infer your application's authorization rules or make a poorly configured database safe. Follow the [runnable tenant isolation tutorial](TENANT_ISOLATION.md).
+
+## TLS boundary
+
+Client TLS termination and upstream TLS are independent:
+
+```text
+Application --client TLS--> Proxima --verified upstream TLS--> PostgreSQL
+```
+
+Client-side TLS requires a certificate and key; `PROXIMA_TLS_REQUIRE_CLIENT=true` rejects plaintext connections. Upstream `verify-full` mode requires a CA file and expected server name. The Engine does not claim that TLS is enforced when the relevant settings are absent.
+
+## Modules and source map
+
+| Source | Responsibility |
 | --- | --- |
-| src/main.rs | Engine process startup and runtime wiring |
-| src/config.rs | Environment-driven runtime configuration and validation |
-| src/protocol.rs | PostgreSQL wire-protocol packet structures and parsing |
-| src/tenant.rs | Signed tenant-token parsing, validation, and emergency-token replay checks |
-| src/session.rs | Session and connection handling |
-| src/policy.rs | Policy-related logic |
-| src/tls.rs | TLS transport components |
-| src/attestation.rs | Local attestation ledger and verification logic |
-| src/metrics.rs | Runtime metrics |
-| src/dashboard.rs | Embedded HTTP health/status dashboard |
-| src/security_breaker.rs | Security breaker controls |
-| src/break_glass.rs | Emergency access mechanisms |
-| src/bin/ | Supporting verification and break-glass command-line tools |
-| tests/ | Engine integration tests |
+| `src/main.rs` | Startup, listeners, connection lifecycle, optional node enrollment and evidence delivery |
+| `src/config.rs` | Environment parsing and validation |
+| `src/protocol.rs` | PostgreSQL startup and message parsing |
+| `src/session.rs` | Startup, tenant verification hook, upstream role routing, authentication handshake |
+| `src/tenant.rs` | HMAC tenant tokens and break-glass token validation/replay protection |
+| `src/policy.rs` | In-memory tenant session binding |
+| `src/tls.rs` | Client and upstream TLS |
+| `src/security_breaker.rs` | Peer-scoped violation threshold and cooldown |
+| `src/break_glass.rs` | Emergency-access event handling |
+| `src/attestation.rs` | Hash-linked local evidence ledger and verification |
+| `src/metrics.rs` | Health listener and Prometheus metrics |
+| `src/dashboard.rs`, `dashboard/index.html` | Embedded local status page and logo |
+| `src/bin/` | Attestation verification and break-glass token CLI tools |
+| `tests/postgres_integration.rs` | Real PostgreSQL proxy and RLS integration test |
 
-## Runtime dependencies
+## Control-plane boundary
 
-The engine uses Tokio for asynchronous I/O, Rustls for TLS, Reqwest for HTTP client operations, and Tokio Postgres for PostgreSQL connectivity. See [Cargo.toml](../crates/proxima-engine/Cargo.toml) for the authoritative dependency list.
-
-Configuration is loaded from environment variables. The exact defaults and validation rules are in [config.rs](../crates/proxima-engine/src/config.rs); the public summary is in [CONFIGURATION.md](CONFIGURATION.md).
-
-## Trust boundaries
-
-- Client connections are untrusted input. Protocol parsers and connection handlers must validate input and fail safely.
-- Tenant identity and authorization depend on correctly configured signing keys and the token-validation path; do not treat a tenant identifier supplied by a client as proof of authorization.
-- Upstream database access depends on the deployment's database credentials, network policy, and TLS configuration.
-- Attestation evidence is only as trustworthy as its signing-key protection, storage integrity, and the process that creates the evidence.
-- The embedded dashboard is an operational surface. Keep it bound to a trusted interface and place suitable access controls around it before exposing it beyond localhost.
-- The private control plane is outside this repository. This repository alone does not provide the complete hosted Agata Proxima service.
-
-This document describes the current source layout, not a formal verification of every path. Review the implementation and deployment configuration before relying on it for sensitive workloads.
+The Engine can run standalone. Optional node enrollment and evidence delivery integrate with a compatible control plane, but this repository does not serve the hosted management API or application. See [Node enrollment](NODE_ENROLLMENT.md) for the exact engine-side contract.

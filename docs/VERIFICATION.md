@@ -75,3 +75,18 @@ The lifetime is limited to 900 seconds (15 minutes). The Engine records used non
 The repository workflow runs the PostgreSQL-backed test suite and release build on pushes to `main` and pull requests targeting `main`. Review the exact [GitHub Actions run](https://github.com/Agata-Proxima/proxima-engine/actions) for your commit.
 
 CI success does not replace TLS verification, production-like integration tests, independent security review, backup/restore testing, or deployment acceptance.
+
+
+## Evidence checklist
+
+For a useful verification record, capture:
+
+- The exact Git commit SHA and, for containers, image digest.
+- Operating system, CPU architecture, Rust toolchain, and container runtime versions.
+- Which tests ran and their actual exit status.
+- Whether PostgreSQL-backed tests used a disposable database and completed successfully.
+- The results of a positive tenant access test and a negative cross-tenant access test.
+- TLS certificate validation and connection behavior for the intended deployment.
+- The attestation verifier command, trusted public-key fingerprint, expected organization/node context, and result, without recording private keys or tokens.
+
+A green CI badge means only that the configured workflow passed for the referenced commit. It does not mean a customer's runtime configuration, database grants, RLS policies, network exposure, or incident procedures have been verified. See [Security](SECURITY.md) and [Deployment](DEPLOYMENT.md).

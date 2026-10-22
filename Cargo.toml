@@ -1,0 +1,4 @@
+[workspace]
+resolver = "2"
+members = ["crates/proxima-engine"]
+default-members = ["crates/proxima-engine"]

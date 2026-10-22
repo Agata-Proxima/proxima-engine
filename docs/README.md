@@ -1,28 +1,33 @@
 # Proxima Engine documentation
 
-Use this index to find the right guide without reading the source tree first.
+Choose a task and go directly to the guide. This repository contains the public Rust Engine and its local operating tools.
 
 ## Start here
 
-- [Quickstart](QUICKSTART.md) — build, run, connect a PostgreSQL client, and verify the local engine.
-- [Network/API reference](API.md) — supported PostgreSQL, dashboard, health, and metrics surfaces.
-- [Configuration reference](CONFIGURATION.md) — environment variables, defaults, and validation rules.
+- **[Quickstart](QUICKSTART.md)** — start PostgreSQL and Proxima, run a real SQL query through the proxy, and inspect health/metrics.
+- **[What is Proxima? Architecture](ARCHITECTURE.md)** — purpose, request flow, source map, and trust boundaries.
+- **[Tenant isolation tutorial](TENANT_ISOLATION.md)** — create PostgreSQL roles, apply RLS, sign a test tenant token, and verify allowed/denied queries.
+- **[Node identity and enrollment](NODE_ENROLLMENT.md)** — copy/paste the Engine environment, one-time token flow, identity persistence, and 401 troubleshooting.
 
-## Understand the engine
+## Build and operate
 
-- [Architecture](ARCHITECTURE.md) — components and trust boundaries.
-- [Security model and limitations](SECURITY.md) — security controls and deployment considerations.
-- [Engine source](../crates/proxima-engine/src/main.rs) — executable entry point.
+- [Configuration reference](CONFIGURATION.md) — all supported environment variables, defaults, and validation.
+- [API, health, and metrics](API.md) — actual local HTTP routes, PostgreSQL connection contract, metrics, and enrollment boundary.
+- [Driver integration recipes](INTEGRATIONS.md) — psql, Node.js, Python, and Rust examples.
+- [Container deployment](DEPLOYMENT.md) — Docker build, upstream configuration, TLS, persistence, and production checklist.
+- [Verification and CLI tools](VERIFICATION.md) — automated tests, PostgreSQL integration tests, attestation verification, and break-glass token tool.
+- [Security model and limitations](SECURITY.md) — threat boundaries and safe deployment.
+- [Operations and troubleshooting](OPERATIONS.md) — health checks, metrics, common failures, and shutdown/recovery.
 
-## Work with the project
+## Contribute and govern
 
-- [Contributing guide](../CONTRIBUTING.md) — development and pull-request expectations.
-- [Security reporting](../SECURITY.md) — responsible vulnerability disclosure.
-- [License](../LICENSE) — MIT license.
-- [CI workflows](../.github/workflows/ci.yml) — automated test and release-build commands.
-- [GitHub Actions](https://github.com/Agata-Proxima/proxima-engine/actions) — live results for the current branches and commits.
-- [Issues](https://github.com/Agata-Proxima/proxima-engine/issues) — report reproducible engine bugs and request improvements.
+- [Contributing](../CONTRIBUTING.md) — development setup, tests, and pull request requirements.
+- [Security reporting](../SECURITY.md) — private vulnerability disclosure guidance.
+- [Code of Conduct](../CODE_OF_CONDUCT.md) — community expectations.
+- [Copyright, license, and trademarks](../COPYRIGHT.md) — license scope for this repository.
+- [MIT License](../LICENSE) — terms for covered source and documentation.
+- [GitHub Issues](https://github.com/Agata-Proxima/proxima-engine/issues) · [Pull requests](https://github.com/Agata-Proxima/proxima-engine/pulls) · [Releases](https://github.com/Agata-Proxima/proxima-engine/releases) · [CI](https://github.com/Agata-Proxima/proxima-engine/actions)
 
-## Scope boundary
+## Scope
 
-This documentation covers the public engine repository only. The hosted Agata Proxima control plane, customer dashboard, account and organization management, and billing remain part of the separate private service. Hosted-product functionality is not an engine API contract.
+The Engine is independently buildable and testable. A separate compatible control plane may issue node enrollment tokens and receive optional signed evidence, but its management endpoints are not served by this Engine. See the public [Agata Proxima website](https://agataproxima.com) for the separate hosted service.

@@ -31,7 +31,9 @@ import pg from "pg";
 const { Client } = pg;
 
 // Obtain these values from trusted server-side configuration.
-// Generate tenantToken only after checking the signed-in user's tenant access.
+// Generate the token only after checking the signed-in user's tenant access.
+const tenantToken = process.env.PROXIMA_TENANT_TOKEN;
+if (!tenantToken) throw new Error("PROXIMA_TENANT_TOKEN is required");
 const client = new Client({
   host: process.env.PROXIMA_HOST ?? "127.0.0.1",
   port: Number(process.env.PROXIMA_PORT ?? 6432),
@@ -66,7 +68,8 @@ python -m pip install "psycopg[binary]"
 import os
 import psycopg
 
-# tenant_token must be signed by a trusted backend after tenant authorization.
+# Supply this only from a trusted backend after tenant authorization.
+tenant_token = os.environ["PROXIMA_TENANT_TOKEN"]
 with psycopg.connect(
     host=os.getenv("PROXIMA_HOST", "127.0.0.1"),
     port=int(os.getenv("PROXIMA_PORT", "6432")),
@@ -86,6 +89,8 @@ Add `tokio-postgres` and `tokio` to your application dependencies. This example 
 ```rust
 use tokio_postgres::{config::SslMode, NoTls};
 
+let tenant_database_password = std::env::var("TENANT_DATABASE_PASSWORD")?;
+let tenant_token = std::env::var("PROXIMA_TENANT_TOKEN")?;
 let mut config = tokio_postgres::Config::new();
 config
     .host("127.0.0.1")

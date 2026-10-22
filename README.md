@@ -4,7 +4,7 @@ The standalone Rust engine component of Agata Proxima.
 
 ## Scope
 
-This repository is intended to publish the engine component only. It does not include the hosted control plane, dashboard, frontend, billing implementation, or hosted-service deployment configuration.
+This repository contains the engine component only. The hosted control plane, dashboard, frontend, billing implementation, and hosted-service deployment configuration remain separate and are not included here.
 
 ## Build and test
 
@@ -15,6 +15,10 @@ cargo test -p proxima-engine
 cargo build -p proxima-engine --release
 ```
 
-## Project status
+## Repository layout
 
-This is the public-engine extraction staging snapshot. Before public release, verify the full test suite and review the licence, dependencies, and release contents.
+- `crates/proxima-engine` — engine source, command-line tools, and integration tests.
+
+## License
+
+MIT. See [LICENSE](LICENSE).

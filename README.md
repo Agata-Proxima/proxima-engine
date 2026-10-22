@@ -26,9 +26,10 @@ You need Git and Docker Desktop or Docker Engine with Compose.
 ```bash
 git clone https://github.com/Agata-Proxima/proxima-engine.git
 cd proxima-engine
-cp .env.example .env
 docker compose -f compose.dev.yaml up --build -d
 ```
+
+Optional: copy `.env.example` to `.env` if you want to change the local settings (`Copy-Item .env.example .env` in PowerShell, or `cp .env.example .env` in Bash). The defaults already work without this step.
 
 Check that the engine and its local PostgreSQL database are running:
 

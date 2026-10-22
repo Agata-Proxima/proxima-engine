@@ -4,6 +4,21 @@ This page describes the commercial boundary, not a price quote or promise of par
 
 ## Where billing happens
 
+```mermaid
+flowchart LR
+  User[Account owner] --> Cloud[Agata Proxima hosted account]
+  Cloud --> Plans[Plan and entitlement selection]
+  Plans --> Checkout[Hosted checkout]
+  Checkout --> Subscription[Subscription and invoices]
+  Subscription --> Limits[Account plan limits and usage]
+  User --> Upgrade[Choose upgrade in account]
+  Upgrade --> Checkout
+```
+
+Use the official hosted account at [agataproxima.com](https://agataproxima.com) to review the plans available to your account, compare included limits, select an upgrade, and review checkout, subscription, and invoice status. The public Engine does not process payments or grant plan entitlements.
+
+## Where billing happens
+
 Plan selection, checkout, subscription status, invoices, and upgrades belong to the separate Agata Proxima Cloud product. The public Engine repository does not implement checkout or grant hosted plan entitlements.
 
 Start at [agataproxima.com](https://agataproxima.com) and use the plan and billing information displayed for your account. Current checkout and account screens are the source of truth for price, currency, availability, limits, and overage terms. Do not infer exact limits from plan names.

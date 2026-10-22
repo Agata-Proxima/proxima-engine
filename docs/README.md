@@ -21,6 +21,21 @@ Choose a task and go directly to the guide. This repository contains the public 
 
 ## Hosted product and support
 
+```mermaid
+flowchart LR
+  Start[Choose a task] --> Quick[Quickstart]
+  Start --> Build[Build and integrate]
+  Start --> Secure[Security and tenant isolation]
+  Start --> Run[Deploy and operate]
+  Start --> Cloud[Hosted account, node enrollment and billing]
+  Quick --> Architecture[Architecture reference]
+  Build --> API[API and driver guides]
+  Secure --> Verify[Verification and security guides]
+  Run --> Ops[Operations and troubleshooting]
+```
+
+## Hosted product and support
+
 - [Cloud control-plane boundary](CLOUD_CONTROL_PLANE.md) — hosted workflow versus self-managed Engine.
 - [Plans and billing](BILLING.md) — how to verify current plan limits and upgrade safely.
 - [Support and troubleshooting](SUPPORT.md) — contact routes, diagnostics, and what not to share.

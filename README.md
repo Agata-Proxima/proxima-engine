@@ -1,91 +1,91 @@
-# Agata Proxima Engine
+# Proxima Engine
 
 [![Rust CI](https://github.com/Agata-Proxima/proxima-engine/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Agata-Proxima/proxima-engine/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Language: Rust](https://img.shields.io/badge/language-Rust-orange.svg)](https://www.rust-lang.org/)
+[![Rust](https://img.shields.io/badge/Rust-stable-orange.svg)](https://www.rust-lang.org/)
 
-**A Rust security-infrastructure engine for tenant-aware database connectivity, protocol handling, transport security, and verifiable operational evidence.**
+**A Rust-based PostgreSQL connectivity engine with tenant-aware session controls, TLS options, operational metrics, and local attestation capabilities.**
 
-Agata Proxima is split into two deliberately separate parts: this repository publishes the **engine** for public inspection and community contribution; the hosted control plane and commercial platform remain private.
+Proxima Engine is the public, open-source engine component of Agata Proxima. The hosted Agata Proxima service—including its private control plane, customer dashboard, account management, and billing—is a separate product and is not part of this repository.
 
-**Start here:** [Architecture](docs/ARCHITECTURE.md) · [Security model and limitations](docs/SECURITY.md) · [Configuration reference](docs/CONFIGURATION.md) · [Contributing](CONTRIBUTING.md) · [Releases](https://github.com/Agata-Proxima/proxima-engine/releases) · [CI results](https://github.com/Agata-Proxima/proxima-engine/actions)
+## Get running
 
-## Why this repository exists
-
-Infrastructure software should be inspectable. This repository exposes the Rust engine implementation, its protocol and security-related modules, test suite, build workflow, and contributor process without publishing the hosted product's control plane, customer-management surfaces, or billing implementation.
-
-The public source is intended for engineers evaluating the implementation, reviewing changes, running tests, and proposing focused improvements. Please read the security and deployment notes before using it with real workloads.
-
-## Engine capabilities
-
-| Area | Implementation |
-| --- | --- |
-| PostgreSQL wire-protocol handling | Startup packets, protocol messages, frame validation, and protocol constants in [protocol.rs](crates/proxima-engine/src/protocol.rs) |
-| Tenant context | Signed tenant-token parsing and validation, expiry checks, and emergency-token replay controls in [tenant.rs](crates/proxima-engine/src/tenant.rs) |
-| Session and policy controls | Session handling and policy modules in [session.rs](crates/proxima-engine/src/session.rs) and [policy.rs](crates/proxima-engine/src/policy.rs) |
-| Transport security | TLS configuration and client/upstream TLS components in [tls.rs](crates/proxima-engine/src/tls.rs) and [config.rs](crates/proxima-engine/src/config.rs) |
-| Attestation evidence | Hash/HMAC-backed attestation ledger and verification tooling in [attestation.rs](crates/proxima-engine/src/attestation.rs) |
-| Operational visibility | Metrics and an embedded health/status dashboard in [metrics.rs](crates/proxima-engine/src/metrics.rs) and [dashboard.rs](crates/proxima-engine/src/dashboard.rs) |
-| Safety controls | Security breaker and break-glass mechanisms in [security_breaker.rs](crates/proxima-engine/src/security_breaker.rs) and [break_glass.rs](crates/proxima-engine/src/break_glass.rs) |
-
-This table identifies source areas; it is not a claim of independent security certification or a guarantee that every deployment is secure by default.
-
-## Repository boundaries
-
-**Included here**
-- Rust engine source and command-line utilities
-- Engine-specific tests
-- Embedded dashboard assets required to build the engine
-- Rust CI workflow and developer documentation
-
-**Not included here**
-- Hosted control plane and its APIs
-- Customer dashboard and account/organization management
-- Billing, payment-provider integrations, and commercial service configuration
-- Production credentials, private infrastructure configuration, or customer data
-
-The private platform is not required to browse or build the public source. Engine features that depend on a compatible control-plane service or external database still require that dependency to be configured.
-
-## Build from source
-
-### Requirements
-
-- A current stable Rust toolchain (rustc and cargo)
-- A supported operating system and network access to download Rust dependencies
-- PostgreSQL only when running tests or scenarios that explicitly require a database
-
-### Clone, test, and build
+You need a stable Rust toolchain and a reachable PostgreSQL server.
 
 ```bash
 git clone https://github.com/Agata-Proxima/proxima-engine.git
 cd proxima-engine
-
-# Run the engine test suite
 cargo test -p proxima-engine
-
-# Build the optimized executable
 cargo build -p proxima-engine --release
 ```
 
-The release binary is written under `target/release/`. The CI workflow runs the same test and release-build commands on pushes and pull requests to `main`.
+Configure the PostgreSQL server to proxy to, then start the engine:
 
-### Configuration
+```bash
+# Change this to the address of your PostgreSQL server.
+export PROXIMA_UPSTREAM_ADDR=127.0.0.1:5432
+# Keep the listener local for your first run.
+export PROXIMA_LISTEN_ADDR=127.0.0.1:6432
+cargo run -p proxima-engine
+```
 
-The runtime reads configuration from environment variables. Defaults and validation are implemented in [config.rs](crates/proxima-engine/src/config.rs); attestation settings are defined in [attestation.rs](crates/proxima-engine/src/attestation.rs).
+In another terminal, connect your PostgreSQL client to the engine's local listener instead of the database's direct port. For example:
 
-Before running the engine, read the [configuration reference](docs/CONFIGURATION.md), set explicit addresses and security settings for your environment, and do not expose listeners publicly until you have reviewed the trust boundaries and access controls. Do not put production secrets in source control, issues, or pull requests.
+```bash
+psql "host=127.0.0.1 port=6432 dbname=postgres user=YOUR_DATABASE_USER"
+```
 
-## Project maturity
+Use a database user and database name that exist on your own PostgreSQL server. This is a connection path through the engine, not a bundled database; PostgreSQL must already be running and reachable.
 
-This repository is an active public source release. A passing CI run means the configured automated test and build commands passed for that commit; it does **not** mean the engine has undergone an independent security audit, has been certified for a regulated workload, or is suitable for every production environment. Pin the exact commit you evaluate and validate the integration in your own environment before relying on it.
+**Documentation hub:** [All developer docs](docs/README.md) · [Quickstart](docs/QUICKSTART.md) · [Network/API reference](docs/API.md) · [Configuration](docs/CONFIGURATION.md)
 
-## Security reporting
+## What is in this repository?
 
-Please do not publish exploitable vulnerabilities, credentials, tenant data, or sensitive logs in public issues. Follow [SECURITY.md](SECURITY.md) for responsible reporting guidance.
+| Capability | Where to inspect it |
+| --- | --- |
+| PostgreSQL protocol proxy and session flow | [protocol](crates/proxima-engine/src/protocol.rs) · [session](crates/proxima-engine/src/session.rs) |
+| Tenant-token verification and tenant context | [tenant](crates/proxima-engine/src/tenant.rs) · [policy](crates/proxima-engine/src/policy.rs) |
+| Client and upstream TLS configuration | [TLS](crates/proxima-engine/src/tls.rs) · [configuration](crates/proxima-engine/src/config.rs) |
+| Attestation ledger and evidence handling | [attestation](crates/proxima-engine/src/attestation.rs) |
+| Connection/query metrics | [metrics](crates/proxima-engine/src/metrics.rs) |
+| Local status dashboard and health route | [dashboard](crates/proxima-engine/src/dashboard.rs) |
+| Security breaker and emergency access controls | [security breaker](crates/proxima-engine/src/security_breaker.rs) · [break-glass](crates/proxima-engine/src/break_glass.rs) |
+
+These links point to implementation, not marketing claims. Review the code, tests, and [security notes](docs/SECURITY.md) to understand the behavior and limits of each component.
+
+## Developer documentation
+
+- **[Quickstart](docs/QUICKSTART.md)** — prerequisites, build, configure, start, and verify a local connection.
+- **[Network/API reference](docs/API.md)** — PostgreSQL listener, local dashboard routes, metrics, and integration boundaries.
+- **[Configuration](docs/CONFIGURATION.md)** — environment variables, defaults, and validation.
+- **[Architecture](docs/ARCHITECTURE.md)** — components and trust boundaries.
+- **[Security model and limitations](docs/SECURITY.md)** — TLS, tenant verification, deployment precautions, and known boundaries.
+- **[Contributing](CONTRIBUTING.md)** — development workflow and pull requests.
+- **[Security reporting](SECURITY.md)** — responsible vulnerability disclosure.
+- **[Releases](https://github.com/Agata-Proxima/proxima-engine/releases)** · **[CI runs](https://github.com/Agata-Proxima/proxima-engine/actions)** · **[Issues](https://github.com/Agata-Proxima/proxima-engine/issues)**
+
+## Engine repository vs. hosted platform
+
+**Public here:** engine source, engine tests, build workflow, local dashboard assets, configuration and integration documentation.
+
+**Private and separate:** hosted control plane, commercial platform implementation, customer accounts and organizations, billing, and the hosted customer dashboard. This repository does not provide a way to administer the hosted service or reproduce its private dashboard.
+
+To use the hosted Agata Proxima product, visit [agataproxima.com](https://agataproxima.com). Hosted account and dashboard functionality is accessed there; it is not an API promised by this source repository.
+
+## Verify before deployment
+
+```bash
+cargo test -p proxima-engine
+cargo build -p proxima-engine --release
+```
+
+GitHub Actions runs the test suite and release build for changes to `main` and pull requests targeting `main`. Check the live [workflow status](https://github.com/Agata-Proxima/proxima-engine/actions) for the commit you are evaluating. A green build is evidence that those automated checks passed; it is not a substitute for an independent security audit or deployment-specific validation.
+
+Start with loopback listeners, configure explicit security settings, and review [Security](docs/SECURITY.md) before exposing the engine to a network. Never commit real credentials, signing keys, customer data, or private infrastructure configuration.
 
 ## Contributing
 
-Issues and focused pull requests are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md), include tests for behavioral changes, and explain any security or compatibility impact.
+Bug reports and focused pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) first. Include reproducible steps and tests for behavioral changes, and clearly describe security or compatibility impact.
 
 ## License
 

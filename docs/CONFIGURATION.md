@@ -20,6 +20,7 @@ The engine reads configuration from environment variables. Defaults and validati
 | PROXIMA_UPSTREAM_TLS_HANDSHAKE_TIMEOUT_MS | 10000 | Upstream TLS handshake timeout |
 | PROXIMA_DASHBOARD_ENABLED | true | Enable the embedded status dashboard |
 | PROXIMA_DASHBOARD_LISTEN_ADDR | 127.0.0.1:9080 | Dashboard listener address |
+| PROXIMA_METRICS_LISTEN_ADDR | 127.0.0.1:9090 | Metrics and health listener address; serves `/metrics`, `/health`, and `/healthz` |
 
 Boolean values accept 1, true, yes, on, 0, false, no, and off (case-insensitive). Timeout values must be positive integers.
 

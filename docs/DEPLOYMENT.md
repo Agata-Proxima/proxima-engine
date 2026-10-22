@@ -75,3 +75,23 @@ If you register the Engine with a compatible control plane, configure `PROXIMA_N
 ## Deployment boundary
 
 The Engine is a data-plane process, not a complete hosted service. Database provisioning, secret distribution, orchestration, ingress, load balancing, control-plane registration, backups, monitoring infrastructure, and incident response remain deployment responsibilities. Do not infer production readiness from a successful image build alone.
+
+
+## Production acceptance checklist
+
+Before directing real application traffic to an Engine deployment, record evidence for each item:
+
+- [ ] Pin the reviewed source revision and container image digest.
+- [ ] Replace sample credentials and store secrets outside the image and repository.
+- [ ] Restrict PostgreSQL, proxy, status, and metrics listeners to their intended callers.
+- [ ] Enable verified TLS for production connections wherever required by the network trust model.
+- [ ] Configure least-privileged PostgreSQL roles and test RLS with two synthetic tenants.
+- [ ] Confirm tenant-token signing happens only in a trusted backend and rotate the signing secret safely.
+- [ ] Persist and protect node identity and attestation-related state according to the configuration guide.
+- [ ] Test startup, upstream outage, restart, secret rotation, backup/restore, and rollback procedures.
+- [ ] Set alerts and verify that operators can access sanitized logs and metrics.
+- [ ] Document an incident owner and a way to disable or isolate the deployment.
+
+Do not mark an item complete because a sample configuration contains the setting. Verify the effective runtime configuration and record the test result. This checklist is operational guidance, not a certification or guarantee of production readiness.
+
+For hosted account, organization, or plan workflows, use [Cloud boundary](CLOUD_CONTROL_PLANE.md); this deployment guide covers the Engine only.

@@ -1,0 +1,26 @@
+name: Rust CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test engine
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Install stable Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+      - name: Run engine tests
+        run: cargo test -p proxima-engine
+      - name: Build release engine
+        run: cargo build -p proxima-engine --release

@@ -1,17 +1,22 @@
-# Copyright, license, and trademarks
+# Copyright, source license, trademarks, and brand assets
 
-Copyright © 2026 Agata Proxima.
+Copyright © 2026 Agata Proxima, except where applicable third-party notices say otherwise.
 
-## Source code and documentation
+## Public Engine source and documentation
 
-The source code and documentation distributed in this repository are licensed under the MIT License in [LICENSE](LICENSE). Keep the copyright and license notice with copies or substantial portions of the covered work.
+The code and documentation covered by this repository's [MIT License](LICENSE) are available under that license's terms. Preserve the required copyright and license notices when redistributing covered material. This summary does not replace the license text.
 
-This statement applies to this repository's covered materials. It does not grant a license to source code in a separate repository, a hosted service, customer data, credentials, or private infrastructure.
+The MIT license for this repository does not grant rights to code in a separate private repository, the hosted Cloud service, customer data, credentials, private infrastructure, or materials not covered by that license.
 
-## Brand and logo
+## Reserved name and logo
 
-“Agata Proxima”, “Proxima Engine”, the Agata Proxima logo, and related brand identifiers identify the project. The MIT License is not a blanket grant of trademark rights. You may accurately refer to the project and link to this repository; do not imply that your fork or product is official or endorsed by Agata Proxima.
+The **Agata Proxima name, Proxima Engine product identity, orbit logo, logo variations, and designated brand artwork are reserved brand assets**. They are not offered under the Engine source-code license unless a separate written permission explicitly says otherwise. Do not redistribute or modify the logo, use it as your own product identity, or imply endorsement without prior written permission. Factual references to the project and links to this repository are welcome.
 
-## License scope
+A source-code license cannot make copying technically impossible or override applicable law. Trademark and copyright rights, exceptions, and remedies depend on jurisdiction and the facts. This notice records the project's intended brand policy; it is not a guarantee of legal outcome.
 
-The applicable license is the license distributed with the particular copy of this repository. This file does not change the license terms for a different repository, and it does not attempt to retroactively alter rights granted by an earlier license. For this public Engine repository, use the current [LICENSE](LICENSE) as the license notice for its covered code and documentation.
+## Private Cloud and third-party materials
+
+The hosted Cloud control plane and private application are separate from this public repository. Their source code, internal APIs, credentials, customer information, and private operational materials are not licensed or disclosed here. Third-party dependencies and separately identified assets may have their own license terms.
+
+Official website: [https://agataproxima.com](https://agataproxima.com)  
+GitHub organization: [https://github.com/Agata-Proxima](https://github.com/Agata-Proxima)

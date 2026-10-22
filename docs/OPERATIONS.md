@@ -51,3 +51,27 @@ The local development Compose profile keeps PostgreSQL data in a named volume. `
 - Treat process-local metrics as telemetry; they reset on restart and are not an audit trail.
 - Protect and back up the attestation ledger and identity file.
 - Test restore, certificate rotation, secret rotation, upstream outages, and planned restarts before production.
+
+
+## Symptom-to-check guide
+
+| Symptom | Check first | Avoid |
+|---|---|---|
+| Health endpoint unavailable | Process state, bind address, port mapping, container logs | Opening the listener to every network as a quick fix |
+| Health is green but SQL fails | Upstream reachability, database name, credentials, TLS mode, protocol listener | Treating HTTP health as a successful database test |
+| SQL works but tenant rows are wrong | Token issuer, tenant ID, selected database role, RLS policies | Granting superuser or bypass-RLS privileges to the application |
+| Enrollment rejected | Token expiry, node ID, expected control-plane configuration, outbound network | Reusing or publishing one-time enrollment tokens |
+| Metrics missing | Metrics listener, scrape target, network policy, scrape errors | Publishing metrics unauthenticated on a public interface |
+| Attestation or break-glass verification fails | Exact verifier options, trusted key, organization/node context, expiry, clock | Disabling verification without an approved incident procedure |
+
+## Incident handling
+
+1. Protect users first: isolate the affected path or stop sensitive traffic if tenant separation is uncertain.
+2. Preserve relevant sanitized logs and the exact Engine commit/image digest.
+3. Do not copy live secrets or customer data into issues, chat, or email.
+4. Reproduce with synthetic tenants and a disposable database when possible.
+5. Rotate credentials only through the established secret-management process; coordinate dependent services.
+6. Validate recovery with both successful and denied requests before restoring traffic.
+7. Record cause, impact, mitigation, and follow-up tests.
+
+Counters and process metrics are operational telemetry, not an immutable audit record. Review the specific persistence and retention behavior of the relevant feature before relying on it as evidence.

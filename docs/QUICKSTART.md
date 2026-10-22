@@ -94,3 +94,28 @@ cargo run -p proxima-engine
 On PowerShell, set the two variables with `$env:PROXIMA_UPSTREAM_ADDR = "127.0.0.1:5432"` and `$env:PROXIMA_LISTEN_ADDR = "127.0.0.1:6432"`, then run `cargo run -p proxima-engine`.
 
 Connect your client to port 6432. The Engine reads configuration from its process environment; see [Configuration](CONFIGURATION.md).
+
+
+## If something fails
+
+| Symptom | First check | Next guide |
+|---|---|---|
+| Compose cannot build | Docker is running and the first build can download dependencies | [Deployment](DEPLOYMENT.md) |
+| Health endpoint refuses connection | Inspect `docker compose -f compose.dev.yaml ps` and container logs | [Operations](OPERATIONS.md) |
+| Health succeeds but SQL fails | Confirm the upstream database is ready and the proxy host/port is correct | [API reference](API.md) |
+| Query connects but tenant rows are wrong | Stop sensitive testing; review role grants and RLS policies | [Tenant isolation](TENANT_ISOLATION.md) |
+| Enrollment fails | Check token expiry, node identity persistence, and variable names without sharing secret values | [Node enrollment](NODE_ENROLLMENT.md) |
+| You need a hosted account or plan | Use the official hosted workflow | [Cloud boundary](CLOUD_CONTROL_PLANE.md) · [Billing](BILLING.md) |
+
+## Next step checklist
+
+- [ ] Local SQL query through the proxy succeeds.
+- [ ] Production credentials replace every demo credential.
+- [ ] Tenant token signing occurs only in a trusted backend.
+- [ ] PostgreSQL roles are non-superuser and least-privileged.
+- [ ] RLS policies are tested with both permitted and denied tenant access.
+- [ ] TLS verification is enabled for production network paths.
+- [ ] Status/metrics endpoints are not publicly exposed without an authenticated boundary.
+- [ ] Backup, recovery, monitoring, and secret rotation procedures are documented.
+
+A checklist is a reminder, not evidence that a control is configured. Record the actual test results for your deployment.

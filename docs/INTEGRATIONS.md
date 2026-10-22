@@ -128,3 +128,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ## Is there an official SDK?
 
 This repository provides the Engine and PostgreSQL connection contract; it does not publish a standalone npm, Python, or Rust Proxima SDK. The examples use existing PostgreSQL drivers and avoid suggesting that an unpublished package exists.
+
+
+## Integration checklist
+
+Before moving a driver example into a real service:
+
+1. Use the database driver and runtime versions supported by your application; these recipes illustrate connection shape, not a universal compatibility guarantee.
+2. Keep the connection string and credentials server-side. Never ship the tenant signing key to a browser, mobile app, or public client bundle.
+3. Authenticate the caller and authorize the tenant in trusted application code before issuing a short-lived signed tenant token.
+4. Configure the Engine's PostgreSQL endpoint, not the upstream database endpoint, for application traffic intended to traverse the proxy.
+5. Test the selected database role and RLS policy with at least two synthetic tenants, including a query that must return no cross-tenant rows.
+6. Configure connection timeouts, pooling, retries, and TLS verification deliberately; do not assume the proxy removes the need for application-level resilience.
+7. Ensure application logs redact passwords, tokens, and tenant-sensitive query values.
+
+## Common integration mistakes
+
+- **Connection succeeds, but the wrong rows are visible:** review the token tenant ID, database role mapping, and RLS policy.
+- **Token validation fails:** check the documented token format, expiry, signing secret, and system clock; do not disable enforcement to make a test pass.
+- **Local example works, deployment fails:** verify DNS, firewall rules, TLS trust, container networking, and effective environment variables from the Engine runtime.
+- **Looking for an SDK package:** this repository documents existing PostgreSQL drivers and does not claim a separately published Proxima SDK.

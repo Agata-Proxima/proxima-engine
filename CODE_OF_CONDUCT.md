@@ -1,21 +1,29 @@
 # Code of Conduct
 
-We want Proxima Engine to be a welcoming, practical, and respectful open-source project.
+## Our commitment
+
+Agata Proxima aims to maintain a welcoming, respectful, practical, and technically focused open-source community. Participation in this repository and its issue tracker requires treating others with dignity.
 
 ## Expected behavior
 
-- Be respectful and constructive, even when disagreeing.
-- Critique code, designs, and technical claims rather than attacking people.
-- Share reproducible details and relevant context when reporting problems.
-- Respect privacy. Never publish credentials, private customer data, or undisclosed security vulnerabilities.
-- Make space for different levels of experience and backgrounds.
+- Be respectful and constructive when technical opinions differ.
+- Critique code and ideas, not people.
+- Share reproducible details and acknowledge uncertainty.
+- Respect privacy, security boundaries, and intellectual property.
+- Keep discussions focused, accessible, and useful to contributors and maintainers.
 
 ## Unacceptable behavior
 
-Harassment, insults directed at contributors, discriminatory language, threats, doxxing, and deliberate publication of private information are not acceptable.
+Harassment, threats, discrimination, sustained personal attacks, doxxing, impersonation, publishing private information, and deliberate disruption are not acceptable. Never post credentials, customer records, private logs, or unpatched vulnerability details in public discussions.
+
+## Maintainer response
+
+Maintainers may edit or remove content, close discussions, or restrict participation when reasonably necessary to protect community members and project operations. They should explain moderation decisions when safe and practical.
 
 ## Reporting
 
-If you experience or witness unacceptable behavior, contact the maintainers through the [Agata Proxima GitHub organization](https://github.com/Agata-Proxima). For a security vulnerability, follow [SECURITY.md](SECURITY.md) instead of opening a public issue.
+For a conduct concern, contact maintainers through the [Agata Proxima GitHub organization](https://github.com/Agata-Proxima) or [support@agataproxima.com](mailto:support@agataproxima.com), provided the mailbox is active and monitored. If email is unavailable, use the organization page to find current contact options.
 
-Maintainers may edit or remove harmful content and may restrict participation when needed to protect the community.
+For a security vulnerability, follow [SECURITY.md](SECURITY.md) instead. Do not publish exploit details in a conduct report or public issue.
+
+This policy applies in project spaces, issues, pull requests, reviews, and community spaces where someone represents the project. This policy is inspired by the Contributor Covenant community standard.

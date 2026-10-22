@@ -82,3 +82,15 @@ The Engine removes this private option before forwarding startup to PostgreSQL, 
 | No response / connection refused | Listener is disabled, not bound to that interface, process is down, or a network rule blocks access |
 
 The status and metrics listeners do not provide an administrative REST API. Do not invent hosted API endpoints from these local routes.
+
+
+## Choosing the right interface
+
+Use the PostgreSQL wire-protocol endpoint for application SQL, HTTP health for basic process monitoring, the status page for private diagnostics, and Prometheus metrics for trusted monitoring. These interfaces have different trust assumptions.
+
+- `/healthz` confirms the HTTP health handler responds; it does not prove a SQL query succeeds.
+- `/api/status` and the status page may expose operational configuration details. Keep them private.
+- `/metrics` should be reachable only by trusted monitoring infrastructure.
+- Account creation, organizations, billing, and hosted node management are Cloud workflows, not Engine HTTP routes in this repository.
+
+For a route failure, verify that the listener is enabled, bound to the expected interface, reachable from the caller's network, and allowed by firewall rules. Check sanitized logs before changing settings. See [Operations](OPERATIONS.md), [Configuration](CONFIGURATION.md), and [Cloud boundary](CLOUD_CONTROL_PLANE.md).

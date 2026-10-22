@@ -19,6 +19,12 @@ Choose a task and go directly to the guide. This repository contains the public 
 - [Security model and limitations](SECURITY.md) — threat boundaries and safe deployment.
 - [Operations and troubleshooting](OPERATIONS.md) — health checks, metrics, common failures, and shutdown/recovery.
 
+## Hosted product and support
+
+- [Cloud control-plane boundary](CLOUD_CONTROL_PLANE.md) — hosted workflow versus self-managed Engine.
+- [Plans and billing](BILLING.md) — how to verify current plan limits and upgrade safely.
+- [Support and troubleshooting](SUPPORT.md) — contact routes, diagnostics, and what not to share.
+
 ## Contribute and govern
 
 - [Contributing](../CONTRIBUTING.md) — development setup, tests, and pull request requirements.

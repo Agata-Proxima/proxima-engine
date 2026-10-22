@@ -2,6 +2,24 @@
 
 ## Find the right route
 
+```mermaid
+flowchart TD
+  Need[What do you need?] --> Setup[Setup or integration]
+  Need --> Account[Account, team, node or billing]
+  Need --> Bug[Engine bug]
+  Need --> Security[Security vulnerability]
+  Setup --> Docs[Quickstart and technical docs]
+  Account --> Website[agataproxima.com]
+  Bug --> Issues[Public Engine GitHub Issues]
+  Security --> Private[Private report to support@agataproxima.com]
+```
+
+- **Email support:** [support@agataproxima.com](mailto:support@agataproxima.com)
+- **Hosted account and billing:** [agataproxima.com](https://agataproxima.com)
+- **Engine source issues:** [GitHub Issues](https://github.com/Agata-Proxima/proxima-engine/issues)
+
+## Find the right route
+
 - Setup: [Quickstart](QUICKSTART.md), [Configuration](CONFIGURATION.md), [Operations](OPERATIONS.md).
 - Tenant access concerns: stop sensitive traffic and review [Security](SECURITY.md) and [Tenant isolation](TENANT_ISOLATION.md).
 - Hosted account, team, node, or billing questions: use [agataproxima.com](https://agataproxima.com).

@@ -37,6 +37,8 @@ curl -fsS http://127.0.0.1:9080/api/status
 
 The health routes return `ok`. The JSON status route reports whether tenant-token enforcement and TLS are configured, plus the listener/upstream settings and connection limit. Do not publish the dashboard or metrics listener to an untrusted network.
 
+In Windows PowerShell, use `Invoke-RestMethod http://127.0.0.1:9090/healthz`, `Invoke-RestMethod http://127.0.0.1:9080/health`, and `Invoke-RestMethod http://127.0.0.1:9080/api/status` instead of the Unix-style `curl -fsS` commands.
+
 ## 3. Create a table in PostgreSQL
 
 This command connects directly to the local database to create test data:

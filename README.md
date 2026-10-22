@@ -37,7 +37,7 @@ psql "host=127.0.0.1 port=6432 dbname=postgres user=YOUR_DATABASE_USER"
 
 Use a database user and database name that exist on your own PostgreSQL server. This is a connection path through the engine, not a bundled database; PostgreSQL must already be running and reachable.
 
-**First-run guide:** [Quickstart](docs/QUICKSTART.md) · [Configuration reference](docs/CONFIGURATION.md) · [Network/API reference](docs/API.md)
+**Documentation hub:** [All developer docs](docs/README.md) · [Quickstart](docs/QUICKSTART.md) · [Network/API reference](docs/API.md) · [Configuration](docs/CONFIGURATION.md)
 
 ## What is in this repository?
 

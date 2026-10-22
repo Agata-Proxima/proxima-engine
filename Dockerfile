@@ -28,6 +28,7 @@ ENV PROXIMA_LISTEN_ADDR=0.0.0.0:6432 \
     PROXIMA_METRICS_LISTEN_ADDR=127.0.0.1:9090 \
     PROXIMA_NODE_IDENTITY_PATH=/var/lib/proxima/node-identity.json \
     PROXIMA_ATTESTATION_LEDGER_PATH=/var/lib/proxima/attestations.jsonl \
+    PROXIMA_BREAK_GLASS_OUTBOX_DIR=/var/lib/proxima/break-glass-outbox \
     PROXIMA_BREAK_GLASS_REPLAY_DIR=/var/lib/proxima/replays
 
 USER proxima:proxima

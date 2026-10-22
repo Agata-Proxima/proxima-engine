@@ -75,3 +75,28 @@ Client-side TLS requires a certificate and key; `PROXIMA_TLS_REQUIRE_CLIENT=true
 ## Control-plane boundary
 
 The Engine can run standalone. Optional node enrollment and evidence delivery integrate with a compatible control plane, but this repository does not serve the hosted management API or application. See [Node enrollment](NODE_ENROLLMENT.md) for the exact engine-side contract.
+
+
+## Deployment shapes
+
+### Local development
+
+Use [Quickstart](QUICKSTART.md) and the repository's Compose profile with disposable data. Its connectivity test is intentionally separate from the tenant isolation lab.
+
+### Self-managed environment
+
+Run the Engine close to the PostgreSQL service it protects. Restrict network access to the proxy, status listener, and metrics listener independently. Keep credentials in a secret manager or protected runtime environment and use verified TLS wherever traffic crosses a trust boundary.
+
+### Hosted Cloud plus customer Engine
+
+The private hosted Cloud and the public Engine have separate responsibilities. The Cloud may coordinate authorized account and node workflows; the Engine handles database-facing traffic in the customer's environment. Enrollment does not replace application authorization, PostgreSQL grants, RLS, or local operational monitoring. The public repository documents only the Engine-side contract.
+
+## Failure boundaries
+
+- **Application authorization failure:** the backend must not mint tenant context for an unauthorized user.
+- **Token validation failure:** reject the request rather than silently falling back to an unscoped tenant.
+- **Database permission failure:** verify the selected role, grants, and RLS policy; do not solve it by granting superuser access.
+- **Control-plane unavailable:** follow the configured Engine behavior and deployment policy; do not assume a remote dashboard can safely substitute for local database enforcement.
+- **Metrics/status unavailable:** investigate observability separately from SQL correctness; a failed metrics listener does not by itself establish whether data access is safe.
+
+See [Security](SECURITY.md), [Tenant isolation](TENANT_ISOLATION.md), and [Operations](OPERATIONS.md).

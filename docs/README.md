@@ -16,6 +16,7 @@ Choose a task and go directly to the guide. This repository contains the public 
 - [Driver integration recipes](INTEGRATIONS.md) — psql, Node.js, Python, and Rust examples.
 - [Container deployment](DEPLOYMENT.md) — Docker build, upstream configuration, TLS, persistence, and production checklist.
 - [Verification and CLI tools](VERIFICATION.md) — automated tests, PostgreSQL integration tests, attestation verification, and break-glass token tool.
+- [Audit evidence and external exports](AUDIT_EVIDENCE_AND_EXPORTS.md) — architecture diagram and the boundary between Engine evidence and hosted audit exports.
 - [Security model and limitations](SECURITY.md) — threat boundaries and safe deployment.
 - [Operations and troubleshooting](OPERATIONS.md) — health checks, metrics, common failures, and shutdown/recovery.
 

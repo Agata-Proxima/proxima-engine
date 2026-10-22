@@ -14,7 +14,7 @@
   <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-wire%20protocol-336791.svg">
 </p>
 
-**Start here:** [Quickstart](docs/QUICKSTART.md) · [Architecture](docs/ARCHITECTURE.md) · [Tenant isolation lab](docs/TENANT_ISOLATION.md) · [API & health](docs/API.md) · [Security](docs/SECURITY.md) · [Hosted platform](https://agataproxima.com)
+**Start here:** [Quickstart](docs/QUICKSTART.md) · [Architecture](docs/ARCHITECTURE.md) · [Tenant isolation lab](docs/TENANT_ISOLATION.md) · [API & health](docs/API.md) · [Audit evidence & exports](docs/AUDIT_EVIDENCE_AND_EXPORTS.md) · [Security](docs/SECURITY.md) · [Hosted platform](https://agataproxima.com)
 
 ## What is Agata Proxima?
 
@@ -111,6 +111,7 @@ Use [API, health, and metrics](docs/API.md), [Operations](docs/OPERATIONS.md), a
 | [Deployment](docs/DEPLOYMENT.md) | Container deployment and production hardening |
 | [Operations](docs/OPERATIONS.md) | Troubleshooting, health checks, logs, recovery |
 | [Verification & CLI](docs/VERIFICATION.md) | Tests, attestation verification, break-glass tooling |
+| [Audit evidence & exports](docs/AUDIT_EVIDENCE_AND_EXPORTS.md) | Engine evidence versus hosted audit exports, with architecture diagram |
 | [Security model](docs/SECURITY.md) | Implemented controls, limitations, deployment checklist |
 | [Cloud control plane](docs/CLOUD_CONTROL_PLANE.md) | What stays hosted/private and how the parts relate |
 | [Plans and billing](docs/BILLING.md) | Hosted plans, usage concepts, upgrade path, billing boundaries |

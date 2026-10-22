@@ -123,3 +123,16 @@ Expected: PostgreSQL rejects the cross-tenant insert due to the RLS policy.
 - A missing or invalid token is rejected when `PROXIMA_TENANT_SIGNING_KEY` is configured.
 
 This example does **not** remove the need to secure the direct PostgreSQL network path, the database administrator credentials, signing-key storage, TLS, backup access, or application authorization. Do not let production application traffic connect directly to PostgreSQL as a privileged role. Review [Security](SECURITY.md) and [Deployment](DEPLOYMENT.md) before adapting this pattern.
+
+
+## Before adapting this lab
+
+- Run the example only against a disposable database with synthetic tenant records.
+- Ensure application roles are not superusers and do not have `BYPASSRLS` privileges.
+- Verify that each tenant has the intended database role mapping and that the token issuer cannot be called by an untrusted client.
+- Test a permitted read for tenant A and an attempted read of tenant B's row using the same tenant-A context. The denied case is essential evidence.
+- Test writes as well as reads if your application supports them; RLS policies must cover the operations your workload uses.
+- Check connection pooling and transaction/session state so one request's tenant context cannot bleed into another request.
+- Re-run negative tests after policy, role, driver, proxy, or pool configuration changes.
+
+A tutorial pass is not a substitute for reviewing the real schema and policy set. PostgreSQL superusers and roles with RLS bypass privileges can defeat ordinary row policies. Keep administrative access separate from application traffic and review [Security](SECURITY.md) and [Deployment](DEPLOYMENT.md).

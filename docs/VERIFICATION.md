@@ -2,6 +2,19 @@
 
 Use these commands to validate the Engine source you have checked out. Record the commit SHA and toolchain with your results.
 
+## Verification workflow
+
+```mermaid
+flowchart TD
+  Source[Engine source and configuration] --> Tests[Unit and integration tests]
+  Tests --> Isolation[Tenant isolation positive and negative tests]
+  Isolation --> Runtime[Health, metrics and runtime checks]
+  Runtime --> Evidence[Attestation or break-glass evidence where configured]
+  Evidence --> Review[Review recorded evidence and configuration]
+```
+
+Attestation and break-glass commands are operational tools, not a substitute for testing actual database permissions and RLS policies. Follow the command requirements later in this guide and protect signing keys and generated evidence.
+
 ## 1. Run unit and integration tests
 
 ```bash

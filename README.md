@@ -142,23 +142,26 @@ Bug reports and feature requests: [GitHub Issues](https://github.com/Agata-Proxi
 
 ## Hosted product, plans, and support
 
-- Website: [agataproxima.com](https://agataproxima.com)
-- Hosted account, organization, team, registered-node, and billing workflows belong to the separate private Cloud application; this repository does not implement those dashboard APIs.
-- Support: [support@agataproxima.com](mailto:support@agataproxima.com). Keep this contact only while the mailbox is configured to receive messages; otherwise use the official website.
-- Read [Cloud control-plane boundary](docs/CLOUD_CONTROL_PLANE.md), [plans and billing](docs/BILLING.md), and [support](docs/SUPPORT.md).
+- **Website and hosted account:** [agataproxima.com](https://agataproxima.com)
+- **Plans and billing:** review the current plans, usage limits, invoices, and upgrade options through the official hosted account workflow. See [Plans and billing](docs/BILLING.md).
+- **Support:** [support@agataproxima.com](mailto:support@agataproxima.com)
+- **Security reports:** send vulnerability details privately using [SECURITY.md](SECURITY.md); do not post exploitable details publicly.
+
+```mermaid
+flowchart TD
+  Dev[Developer] --> Docs[Public Engine documentation]
+  Docs --> Engine[Open-source Proxima Engine]
+  Customer[Customer organization] --> Cloud[Agata Proxima hosted control plane]
+  Cloud -->|authorized enrollment and policy context| Engine
+  App[Application / PostgreSQL driver] --> Engine
+  Engine --> DB[(PostgreSQL)]
+  Cloud -. account, team, plans and billing .-> Customer
+```
+
+The hosted account, organization, team, node-registration, and billing workflows live in the separate private product. This repository documents the integration boundary; it does not expose the private dashboard's APIs or source.
 
 ## Brand and license boundary
 
-The Engine source is licensed under the [MIT License](LICENSE). The separate hosted application is not included. The Agata Proxima name and orbit logo are reserved brand assets and are not granted for reuse by the source-code license; see [COPYRIGHT.md](COPYRIGHT.md). This states the project's intended policy but cannot guarantee copying is technically impossible or replace applicable legal protections.
+The Engine source is licensed under the [MIT License](LICENSE). That license does not grant rights to the separate private application or to the Agata Proxima name, orbit logo, or designated brand artwork. See [COPYRIGHT.md](COPYRIGHT.md) for details.
 
 
-## Hosted product, plans, and support
-
-- Website: [agataproxima.com](https://agataproxima.com)
-- Hosted account, organization, team, registered-node, and billing workflows belong to the separate private Cloud application; this repository does not implement those dashboard APIs.
-- Support: [support@agataproxima.com](mailto:support@agataproxima.com). Keep this contact only while the mailbox is configured to receive messages; otherwise use the official website.
-- Read [Cloud boundary](docs/CLOUD_CONTROL_PLANE.md), [plans and billing](docs/BILLING.md), and [support](docs/SUPPORT.md).
-
-## Brand and license boundary
-
-The Engine source is licensed under the [MIT License](LICENSE). The separate hosted application is not included. The Agata Proxima name and orbit logo are reserved brand assets and are not granted for reuse by the source-code license; see [COPYRIGHT.md](COPYRIGHT.md). This states the project's intended policy but cannot guarantee copying is technically impossible or replace applicable legal protections.

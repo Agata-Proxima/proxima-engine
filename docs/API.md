@@ -1,60 +1,84 @@
-# Network and API reference
+# API, health, metrics, and integration reference
 
-Proxima Engine is primarily a PostgreSQL wire-protocol proxy. It is **not** a general-purpose REST API server, and this repository does not expose the private Agata Proxima control-plane API or customer dashboard API.
+Proxima Engine is a PostgreSQL wire-protocol proxy with a small local HTTP status surface. It is **not** a general-purpose REST API server. This document lists the HTTP routes implemented in this repository.
 
-## Network surfaces
+## Local HTTP surfaces
 
-| Surface | Default | Purpose |
-| --- | --- | --- |
-| PostgreSQL proxy | `127.0.0.1:6432` | Accepts PostgreSQL client connections and forwards sessions to the configured upstream database. |
-| Upstream PostgreSQL | `127.0.0.1:5432` | Database target configured by `PROXIMA_UPSTREAM_ADDR`. |
-| Local status dashboard | `127.0.0.1:9080` | Optional embedded dashboard and read-only local status routes. |
-| Metrics listener | `127.0.0.1:9090` (`PROXIMA_METRICS_LISTEN_ADDR`) | Prometheus metrics at `/metrics`; health at `/health` and `/healthz`. |
+| Listener | Default | Routes | Purpose |
+| --- | --- | --- | --- |
+| Embedded status page | `127.0.0.1:9080` | `GET /` | Engine status page with the Agata Proxima logo |
+| Embedded status page | `127.0.0.1:9080` | `GET /logo.svg` | Project logo asset |
+| Embedded status page | `127.0.0.1:9080` | `GET /health` | Plain-text `ok` |
+| Embedded status page | `127.0.0.1:9080` | `GET /api/status` | JSON status/configuration summary |
+| Metrics listener | `127.0.0.1:9090` | `GET /metrics` | Prometheus exposition |
+| Metrics listener | `127.0.0.1:9090` | `GET /health`, `GET /healthz` | Plain-text `ok` |
 
-Defaults are intended for local development. Do not assume a listener is authenticated merely because it is local in a development setup; bind to loopback and restrict access at the network layer.
+The defaults are bound to loopback. The embedded status server does not implement user authentication or authorization. Keep it private; do not publish it to the internet. The status JSON includes listener/upstream addresses and whether tenant enforcement and TLS are configured.
 
-## PostgreSQL connection
-
-Clients use the PostgreSQL protocol and connect to the engine's configured listen address. Example:
+## Verify a running Engine
 
 ```bash
-psql "host=127.0.0.1 port=6432 dbname=postgres user=YOUR_DATABASE_USER"
+curl -i http://127.0.0.1:9090/healthz
+curl -i http://127.0.0.1:9080/health
+curl -i http://127.0.0.1:9080/api/status
+curl -i http://127.0.0.1:9090/metrics
 ```
 
-The target database must already exist and accept the supplied database credentials. The engine does not bundle PostgreSQL.
+A healthy route returns HTTP 200 with body `ok`. An unknown route returns HTTP 404. A successful health response means the listener is responding; it does not prove that the upstream database is reachable or that tenant isolation is correctly configured. Verify an actual database query separately.
 
-## Local dashboard HTTP routes
+## PostgreSQL endpoint
 
-The embedded dashboard currently implements these routes in [dashboard.rs](../crates/proxima-engine/src/dashboard.rs):
+Applications connect using their existing PostgreSQL driver to the Engine listener, normally port 6432. The Engine opens an upstream connection to `PROXIMA_UPSTREAM_ADDR`.
 
-| Method | Path | Response |
-| --- | --- | --- |
-| `GET` | `/` | Embedded HTML dashboard. |
-| `GET` | `/logo.svg` | Embedded logo asset. |
-| `GET` | `/health` | Plain-text `ok` health response. |
-| `GET` | `/api/status` | JSON with tenant-enforcement, TLS, listen/upstream address, and connection-limit status. |
-| Other paths | — | `404 Not Found`. |
+```bash
+psql "host=127.0.0.1 port=6432 dbname=appdb user=proxima password=YOUR_DATABASE_PASSWORD sslmode=disable"
+```
 
-The current embedded handler is intentionally small. It is not a customer-management API, does not create or enroll nodes through HTTP, and does not implement a webhook-management API.
+Use `sslmode=disable` only in the loopback development quickstart. For production, configure TLS and verify certificates according to [Deployment](DEPLOYMENT.md).
 
 ## Prometheus metrics
 
-The engine exposes Prometheus-formatted operational metrics through its metrics listener. Metric names and descriptions are defined in [metrics.rs](../crates/proxima-engine/src/metrics.rs). They include connection counts, sessions, processed query messages, bytes forwarded, security-breaker activity, and query latency observations.
+The metrics listener serves Prometheus text format. Useful series include:
 
-The default scrape URL is `http://127.0.0.1:9090/metrics`. Health checks are available at `http://127.0.0.1:9090/health` and `/healthz`. Override the listener with `PROXIMA_METRICS_LISTEN_ADDR`. Configure your Prometheus scrape target accordingly. Do not expose metrics publicly without appropriate network restrictions.
+- `proxima_engine_active_connections`
+- `proxima_engine_connections_accepted_total`
+- `proxima_engine_connections_rejected_total`
+- `proxima_engine_sessions_established_total`
+- `proxima_engine_sessions_failed_total`
+- `proxima_engine_processed_queries_total`
+- `proxima_engine_authenticated_tenant_sessions_total`
+- `proxima_engine_security_violations_blocked_total`
+- `proxima_engine_security_breaker_trips_total`
+- `proxima_engine_client_bytes_total`
+- `proxima_engine_database_bytes_total`
+- `proxima_engine_session_duration_seconds_total`
+- `proxima_engine_query_roundtrip_latency_seconds_bucket`
+- `proxima_engine_query_roundtrip_latency_seconds_count`
 
-## Node enrollment, hosted API keys, and webhooks
+The counters and histogram are in-memory and reset when the process restarts. Scrape them on a private monitoring network. They are operational telemetry, not a durable audit log.
 
-Node enrollment, organization/customer administration, hosted API keys, and hosted webhooks belong to the private hosted Agata Proxima service and are not implemented as public REST endpoints by this engine repository. Do not invent endpoint URLs or paste hosted credentials into engine configuration without following the hosted product's official instructions.
+## Node enrollment contract
 
-If you need the hosted platform, go to [agataproxima.com](https://agataproxima.com), sign in to your account, and use the developer documentation provided there.
+When enrollment variables are supplied, the Engine calls `POST /api/v1/nodes/enroll` on the configured control-plane URL with JSON fields `node_id` and `enrollment_token`. It validates the returned identity and persists it locally.
 
-## Contract and compatibility
+This is an **outbound request made by the Engine**, not an HTTP route served by this Engine repository. Node registration and one-time token issuance require a compatible control plane. The public Engine does not expose `POST /api/v1/nodes`, tenant-management routes, hosted API-key management, or webhook-management routes. See [Node enrollment](NODE_ENROLLMENT.md).
 
-Treat the implementation as the source of truth. Before integrating:
+## Tenant context
 
-1. Pin a release or commit.
-2. Check the route behavior in `crates/proxima-engine/src/dashboard.rs`.
-3. Check runtime settings in `crates/proxima-engine/src/config.rs`.
-4. Run `cargo test -p proxima-engine`.
-5. Validate TLS, network exposure, failure handling, and metrics in your target environment.
+When `PROXIMA_TENANT_SIGNING_KEY` is configured, the Engine requires a valid signed tenant token during PostgreSQL startup. libpq-compatible clients can pass it in the startup `options` value:
+
+```text
+-c proxima_tenant_token=<signed-token>
+```
+
+The Engine removes this private option before forwarding startup to PostgreSQL, then rewrites the upstream username to `<PROXIMA_TENANT_ROLE_PREFIX><tenant_id>` (hyphens in the tenant ID become underscores). PostgreSQL role grants and RLS policies remain essential. Follow [Tenant isolation](TENANT_ISOLATION.md) for runnable SQL and token generation.
+
+## HTTP status meanings
+
+| Status | Meaning |
+| --- | --- |
+| `200` | Health, status, logo, dashboard, or metrics response was served |
+| `404` | The requested path is not implemented on that listener |
+| No response / connection refused | Listener is disabled, not bound to that interface, process is down, or a network rule blocks access |
+
+The status and metrics listeners do not provide an administrative REST API. Do not invent hosted API endpoints from these local routes.

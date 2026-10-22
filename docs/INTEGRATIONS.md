@@ -89,27 +89,32 @@ Add `tokio-postgres` and `tokio` to your application dependencies. This example 
 ```rust
 use tokio_postgres::{config::SslMode, NoTls};
 
-let tenant_database_password = std::env::var("TENANT_DATABASE_PASSWORD")?;
-let tenant_token = std::env::var("PROXIMA_TENANT_TOKEN")?;
-let mut config = tokio_postgres::Config::new();
-config
-    .host("127.0.0.1")
-    .port(6432)
-    .dbname("appdb")
-    .user("proxima")
-    .password(tenant_database_password)
-    .ssl_mode(SslMode::Disable)
-    .options(format!("-c proxima_tenant_token={tenant_token}"));
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let tenant_database_password = std::env::var("TENANT_DATABASE_PASSWORD")?;
+    let tenant_token = std::env::var("PROXIMA_TENANT_TOKEN")?;
 
-let (client, connection) = config.connect(NoTls).await?;
-tokio::spawn(async move {
-    if let Err(error) = connection.await {
-        eprintln!("PostgreSQL connection error: {error}");
-    }
-});
-let row = client.query_one("SELECT current_database()", &[]).await?;
-let database: &str = row.get(0);
-println!("{database}");
+    let mut config = tokio_postgres::Config::new();
+    config
+        .host("127.0.0.1")
+        .port(6432)
+        .dbname("appdb")
+        .user("proxima")
+        .password(tenant_database_password)
+        .ssl_mode(SslMode::Disable)
+        .options(format!("-c proxima_tenant_token={tenant_token}"));
+
+    let (client, connection) = config.connect(NoTls).await?;
+    tokio::spawn(async move {
+        if let Err(error) = connection.await {
+            eprintln!("PostgreSQL connection error: {error}");
+        }
+    });
+    let row = client.query_one("SELECT current_database()", &[]).await?;
+    let database: String = row.get(0);
+    println!("{database}");
+    Ok(())
+}
 ```
 
 ## Connection pool notes

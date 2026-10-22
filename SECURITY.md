@@ -6,7 +6,7 @@ Agata Proxima takes reports about security weaknesses seriously. This policy cov
 
 **Do not open a public issue or pull request for an exploitable vulnerability.** Do not publish credentials, signing keys, tenant data, customer information, or sensitive logs.
 
-Preferred contact: [support@agataproxima.com](mailto:support@agataproxima.com) with the subject **Private security report — Proxima Engine**. Do not include live secrets or customer data in the initial email. If this mailbox is not available, use the contact options on the [Agata Proxima GitHub organization](https://github.com/Agata-Proxima) to request a private disclosure route.
+Preferred contact: [support@agataproxima.com](mailto:support@agataproxima.com) with the subject **Private security report — Proxima Engine**. Do not include live secrets or customer data in the email.
 
 Include, when safe:
 - Affected repository, commit SHA or release and the Engine version.
@@ -14,7 +14,7 @@ Include, when safe:
 - A minimal proof of concept using synthetic data.
 - Relevant sanitized logs and any known mitigations.
 
-Please allow maintainers reasonable time to investigate and coordinate a fix before public disclosure. No guaranteed response or remediation SLA is currently published; do not interpret this policy as a contractual service-level commitment.
+Please allow maintainers reasonable time to investigate, coordinate a fix, and prepare a responsible disclosure before publishing exploit details.
 
 ## Scope
 
@@ -32,7 +32,7 @@ Out of scope for this repository's public issue tracker: requests to expose priv
 
 ## Supported versions and verification
 
-A formal release-support matrix and guaranteed response timeline have not been published. Include the exact commit SHA, operating system, Rust toolchain, configuration names (not secret values), and the smallest safe reproduction when reporting a bug.
+When reporting a bug, include the exact commit SHA, operating system, Rust toolchain, configuration names (never secret values), and the smallest safe reproduction.
 
 ## Security claims
 

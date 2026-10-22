@@ -1,0 +1,120 @@
+# Driver integration recipes
+
+Proxima speaks the PostgreSQL wire protocol. Keep the driver you already use and point it at the Engine's host and port. If tenant enforcement is enabled, a trusted server must generate a valid tenant token and pass it during connection startup.
+
+The examples below use local addresses and `sslmode=disable` for development only. Use validated TLS in production.
+
+## psql
+
+```bash
+PGPASSWORD="$TENANT_DATABASE_PASSWORD" \
+PGOPTIONS="-c proxima_tenant_token=$TENANT_TOKEN" \
+psql "host=127.0.0.1 port=6432 dbname=appdb user=proxima sslmode=disable" \
+  -c "SELECT current_user, current_database();"
+```
+
+The client username is the proxy login name. The Engine rewrites the upstream PostgreSQL username to the role derived from the signed tenant ID. The password must authenticate as that upstream tenant role.
+
+## Node.js — node-postgres (`pg`)
+
+Install the PostgreSQL driver in your application:
+
+```bash
+npm install pg
+```
+
+Example server-side connection:
+
+```javascript
+import pg from "pg";
+
+const { Client } = pg;
+
+// Obtain these values from trusted server-side configuration.
+// Generate tenantToken only after checking the signed-in user's tenant access.
+const client = new Client({
+  host: process.env.PROXIMA_HOST ?? "127.0.0.1",
+  port: Number(process.env.PROXIMA_PORT ?? 6432),
+  database: process.env.PG_DATABASE ?? "appdb",
+  user: process.env.PROXIMA_LOGIN ?? "proxima",
+  password: process.env.TENANT_DATABASE_PASSWORD,
+  options: `-c proxima_tenant_token=${tenantToken}`,
+  // For local-only development. Configure verified TLS in production.
+  ssl: false,
+});
+
+await client.connect();
+try {
+  const result = await client.query("SELECT current_user, current_database()");
+  console.log(result.rows[0]);
+} finally {
+  await client.end();
+}
+```
+
+Do not embed the tenant signing key in this application client or browser bundle. Only a trusted backend should mint the token.
+
+## Python — Psycopg 3
+
+Install Psycopg:
+
+```bash
+python -m pip install "psycopg[binary]"
+```
+
+```python
+import os
+import psycopg
+
+# tenant_token must be signed by a trusted backend after tenant authorization.
+with psycopg.connect(
+    host=os.getenv("PROXIMA_HOST", "127.0.0.1"),
+    port=int(os.getenv("PROXIMA_PORT", "6432")),
+    dbname=os.getenv("PG_DATABASE", "appdb"),
+    user=os.getenv("PROXIMA_LOGIN", "proxima"),
+    password=os.environ["TENANT_DATABASE_PASSWORD"],
+    options=f"-c proxima_tenant_token={tenant_token}",
+    sslmode="disable",  # local development only
+) as conn:
+    print(conn.execute("SELECT current_user, current_database()").fetchone())
+```
+
+## Rust — tokio-postgres
+
+Add `tokio-postgres` and `tokio` to your application dependencies. This example uses `NoTls` only for local development:
+
+```rust
+use tokio_postgres::{config::SslMode, NoTls};
+
+let mut config = tokio_postgres::Config::new();
+config
+    .host("127.0.0.1")
+    .port(6432)
+    .dbname("appdb")
+    .user("proxima")
+    .password(tenant_database_password)
+    .ssl_mode(SslMode::Disable)
+    .options(format!("-c proxima_tenant_token={tenant_token}"));
+
+let (client, connection) = config.connect(NoTls).await?;
+tokio::spawn(async move {
+    if let Err(error) = connection.await {
+        eprintln!("PostgreSQL connection error: {error}");
+    }
+});
+let row = client.query_one("SELECT current_database()", &[]).await?;
+let database: &str = row.get(0);
+println!("{database}");
+```
+
+## Connection pool notes
+
+- Mint or refresh tenant tokens on the trusted server side.
+- A token is checked when a physical PostgreSQL connection starts. Do not assume a pool will automatically refresh a token for new connections.
+- Avoid sharing one physical connection across different tenant identities. Use tenant-aware pool separation or create connections with the appropriate signed context.
+- Set pool size and timeouts for the Engine's configured connection limit.
+- Do not route production traffic directly to PostgreSQL as a way around the Engine.
+
+## Is there an official SDK?
+
+This repository provides the Engine and PostgreSQL connection contract; it does not publish a standalone npm, Python, or Rust Proxima SDK. The examples use existing PostgreSQL drivers and avoid suggesting that an unpublished package exists.

@@ -138,3 +138,15 @@ Bug reports and feature requests: [GitHub Issues](https://github.com/Agata-Proxi
 ---
 
 <p align="center">Built by Agata Proxima · <a href="https://agataproxima.com">agataproxima.com</a> · <a href="https://github.com/Agata-Proxima">GitHub organization</a></p>
+
+
+## Hosted product, plans, and support
+
+- Website: [agataproxima.com](https://agataproxima.com)
+- Hosted account, organization, team, registered-node, and billing workflows belong to the separate private Cloud application; this repository does not implement those dashboard APIs.
+- Support: [support@agataproxima.com](mailto:support@agataproxima.com). Keep this contact only while the mailbox is configured to receive messages; otherwise use the official website.
+- Read [Cloud control-plane boundary](docs/CLOUD_CONTROL_PLANE.md), [plans and billing](docs/BILLING.md), and [support](docs/SUPPORT.md).
+
+## Brand and license boundary
+
+The Engine source is licensed under the [MIT License](LICENSE). The separate hosted application is not included. The Agata Proxima name and orbit logo are reserved brand assets and are not granted for reuse by the source-code license; see [COPYRIGHT.md](COPYRIGHT.md). This states the project's intended policy but cannot guarantee copying is technically impossible or replace applicable legal protections.

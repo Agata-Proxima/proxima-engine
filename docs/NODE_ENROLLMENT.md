@@ -10,7 +10,9 @@ This guide documents the public Engine contract. It does not reproduce the hoste
 
 ## 1. Obtain enrollment values
 
-From the control plane you are authorized to use, obtain:
+For hosted usage, start at [agataproxima.com](https://agataproxima.com) and use your authorized account workflow to obtain the enrollment values. The hosted management workflow and its private API are not distributed in this repository. For a self-managed setup, use your own compatible control plane.
+
+Obtain:
 - The registered node UUID.
 - The HTTPS enrollment URL ending in `/api/v1/nodes/enroll`.
 - The one-time enrollment token.

@@ -4,6 +4,25 @@ This guide covers the Engine side of node registration: the environment variable
 
 ## Understand the boundary
 
+```mermaid
+sequenceDiagram
+  participant Admin as Organization admin
+  participant Cloud as Hosted control plane
+  participant Engine as Proxima Engine node
+  participant Store as Persistent node identity
+  Admin->>Cloud: Authorize/register node
+  Cloud-->>Admin: Node UUID + one-time enrollment token
+  Admin->>Engine: Configure enrollment settings
+  Engine->>Cloud: Redeem token over outbound connection
+  Cloud-->>Engine: Enrollment result
+  Engine->>Store: Persist node identity
+  Engine->>Engine: Start with registered identity
+```
+
+The diagram describes the intended integration sequence. Actual account authorization and token issuance happen in the hosted product; this public repository covers Engine-side configuration and persistence, not private dashboard endpoints.
+
+## Understand the boundary
+
 The Engine can run locally without any node registration. To give an Engine instance a registered identity, a compatible Agata Proxima control plane must issue a node UUID and a short-lived, one-time enrollment token. The control plane owns node creation and token issuance; this repository does not implement a node-creation REST endpoint.
 
 This guide documents the public Engine contract. It does not reproduce the hosted management application or its private API.

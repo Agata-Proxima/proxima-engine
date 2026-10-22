@@ -38,3 +38,5 @@ jobs:
         run: cargo test -p proxima-engine
       - name: Build release engine
         run: cargo build -p proxima-engine --release
+      - name: Build container image
+        run: docker build -t proxima-engine:ci .

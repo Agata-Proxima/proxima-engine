@@ -1,5 +1,20 @@
 # Operations and troubleshooting
 
+## First-response troubleshooting flow
+
+```mermaid
+flowchart TD
+  Incident[Connection or health problem] --> Health[Check health endpoint]
+  Health -->|HTTP fails| Listener[Check process, bind address and logs]
+  Health -->|HTTP responds| DB[Check upstream PostgreSQL reachability]
+  DB -->|Unreachable| Network[Check DNS, port, firewall and TLS]
+  DB -->|Reachable| Auth[Check credentials, tenant token, role and RLS]
+  Auth --> Metrics[Inspect restricted metrics and sanitized logs]
+  Listener --> Safe[Preserve evidence; never paste secrets into issues]
+  Network --> Safe
+  Metrics --> Safe
+```
+
 ## Health and status
 
 Default local endpoints:

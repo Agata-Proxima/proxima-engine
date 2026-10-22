@@ -122,10 +122,23 @@ Use [API, health, and metrics](docs/API.md), [Operations](docs/OPERATIONS.md), a
 
 ## Hosted Cloud, plans, and support
 
-- **Website and hosted account workflow:** [agataproxima.com](https://agataproxima.com)
-- **Plans and billing:** use the current plan and billing information shown through the official hosted account workflow. See [Plans and billing](docs/BILLING.md) for how plan limits and upgrades are described.
+- **Website and hosted account:** [agataproxima.com](https://agataproxima.com)
+- **Plans and billing:** review plans, usage limits, invoices, and upgrades through the hosted account workflow. See [Plans and billing](docs/BILLING.md).
 - **Support:** [support@agataproxima.com](mailto:support@agataproxima.com)
-- **Security vulnerabilities:** do not post exploitable details publicly. Follow [SECURITY.md](SECURITY.md).
+- **Security vulnerabilities:** report them privately as described in [SECURITY.md](SECURITY.md).
+
+```mermaid
+flowchart TD
+  Dev[Developer] --> Docs[Public Engine documentation]
+  Docs --> Engine[Open-source Proxima Engine]
+  Customer[Customer organization] --> Cloud[Agata Proxima hosted control plane]
+  Cloud -->|authorized node enrollment| Engine
+  App[Application / PostgreSQL driver] --> Engine
+  Engine --> DB[(PostgreSQL)]
+  Cloud -. account, team, plans and billing .-> Customer
+```
+
+The hosted account, organization, team, node-registration, and billing workflows belong to the separate private application. This repository explains the integration boundary without exposing private dashboard source code or endpoints.
 
 ## Open-source scope and brand
 
@@ -138,30 +151,3 @@ Bug reports and feature requests: [GitHub Issues](https://github.com/Agata-Proxi
 ---
 
 <p align="center">Built by Agata Proxima · <a href="https://agataproxima.com">agataproxima.com</a> · <a href="https://github.com/Agata-Proxima">GitHub organization</a></p>
-
-
-## Hosted product, plans, and support
-
-- **Website and hosted account:** [agataproxima.com](https://agataproxima.com)
-- **Plans and billing:** review the current plans, usage limits, invoices, and upgrade options through the official hosted account workflow. See [Plans and billing](docs/BILLING.md).
-- **Support:** [support@agataproxima.com](mailto:support@agataproxima.com)
-- **Security reports:** send vulnerability details privately using [SECURITY.md](SECURITY.md); do not post exploitable details publicly.
-
-```mermaid
-flowchart TD
-  Dev[Developer] --> Docs[Public Engine documentation]
-  Docs --> Engine[Open-source Proxima Engine]
-  Customer[Customer organization] --> Cloud[Agata Proxima hosted control plane]
-  Cloud -->|authorized enrollment and policy context| Engine
-  App[Application / PostgreSQL driver] --> Engine
-  Engine --> DB[(PostgreSQL)]
-  Cloud -. account, team, plans and billing .-> Customer
-```
-
-The hosted account, organization, team, node-registration, and billing workflows live in the separate private product. This repository documents the integration boundary; it does not expose the private dashboard's APIs or source.
-
-## Brand and license boundary
-
-The Engine source is licensed under the [MIT License](LICENSE). That license does not grant rights to the separate private application or to the Agata Proxima name, orbit logo, or designated brand artwork. See [COPYRIGHT.md](COPYRIGHT.md) for details.
-
-

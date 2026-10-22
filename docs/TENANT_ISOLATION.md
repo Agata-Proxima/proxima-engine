@@ -10,10 +10,14 @@ Run this from the repository root:
 
 ```bash
 docker compose -f compose.dev.yaml exec -T postgres psql -U proxima -d appdb <<'SQL'
+DROP SCHEMA IF EXISTS tenant_demo CASCADE;
+DROP ROLE IF EXISTS proxima_tenant_tenant_a;
+DROP ROLE IF EXISTS proxima_tenant_tenant_b;
+
 CREATE ROLE proxima_tenant_tenant_a LOGIN PASSWORD 'tenant-a-password' NOSUPERUSER NOBYPASSRLS;
 CREATE ROLE proxima_tenant_tenant_b LOGIN PASSWORD 'tenant-b-password' NOSUPERUSER NOBYPASSRLS;
 
-CREATE SCHEMA IF NOT EXISTS tenant_demo;
+CREATE SCHEMA tenant_demo;
 CREATE TABLE IF NOT EXISTS tenant_demo.records (
   id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   tenant_id text NOT NULL,
@@ -88,7 +92,17 @@ PGPASSWORD='tenant-a-password' PGOPTIONS="-c proxima_tenant_token=$TENANT_TOKEN"
   -c "SELECT tenant_id, secret FROM tenant_demo.records;"
 ```
 
-Expected: only the `tenant_a / A-secret` row is returned.
+Expected: only the `tenant_a / A-secret` row is returned. You can also verify the other tenant's row is invisible:
+
+```bash
+docker compose -f compose.dev.yaml exec \\
+  -e PGPASSWORD=tenant-a-password \\
+  -e "PGOPTIONS=-c proxima_tenant_token=$TENANT_TOKEN" \\
+  postgres psql "host=engine port=6432 dbname=appdb user=proxima sslmode=disable" \\
+  -c "SELECT count(*) FROM tenant_demo.records WHERE tenant_id = 'tenant_b';"
+```
+
+Expected count: `0`.
 
 Test the negative case:
 

@@ -22,7 +22,7 @@ Maintainers may edit or remove content, close discussions, or restrict participa
 
 ## Reporting
 
-For a conduct concern, contact maintainers through the [Agata Proxima GitHub organization](https://github.com/Agata-Proxima) or [support@agataproxima.com](mailto:support@agataproxima.com), provided the mailbox is active and monitored. If email is unavailable, use the organization page to find current contact options.
+For a conduct concern, contact maintainers at [support@agataproxima.com](mailto:support@agataproxima.com).
 
 For a security vulnerability, follow [SECURITY.md](SECURITY.md) instead. Do not publish exploit details in a conduct report or public issue.
 

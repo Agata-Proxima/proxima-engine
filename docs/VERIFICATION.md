@@ -42,10 +42,14 @@ A health response alone is not a database test. Run a query through port 6432 as
 
 ## 3. Verify an attestation ledger
 
-The verifier checks the local hash-linked ledger. Point it at the ledger you want to inspect:
+The verifier checks the local hash-linked ledger and validates its signatures. Point it at the ledger you want to inspect and supply the same signing key, organization ID, and node ID used when the records were created. The CLI does not automatically read the Engine identity JSON file.
 
 ```bash
 export PROXIMA_ATTESTATION_LEDGER_PATH=data/proxima-attestations.jsonl
+export PROXIMA_ORGANIZATION_ID='<recorded-organization-id>'
+export PROXIMA_NODE_ID='<recorded-node-id>'
+# Prefer the node identity key (hex) or the configured attestation signing key.
+export PROXIMA_NODE_SIGNING_KEY_HEX='<64-hex-character-node-key>'
 cargo run -p proxima-engine --bin proxima-attest-verify
 ```
 

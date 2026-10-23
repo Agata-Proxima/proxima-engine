@@ -21,7 +21,9 @@ sequenceDiagram
 
 The diagram describes the intended integration sequence. Actual account authorization and token issuance happen in the hosted product; this public repository covers Engine-side configuration and persistence, not private dashboard endpoints.
 
-## Understand the boundary
+## Local-only development versus hosted enrollment
+
+For a completely offline local identity and signed test-token workflow, start with [Local developer mode](LOCAL_DEVELOPMENT.md). It generates a local node identity and test tenant credentials without a Cloud account. That identity is self-issued and does not register a node with Agata Proxima Cloud.
 
 The Engine can run locally without any node registration. To give an Engine instance a registered identity, a compatible Agata Proxima control plane must issue a node UUID and a short-lived, one-time enrollment token. The control plane owns node creation and token issuance; this repository does not implement a node-creation REST endpoint.
 

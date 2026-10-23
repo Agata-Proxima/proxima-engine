@@ -56,6 +56,13 @@ def init(args: argparse.Namespace) -> None:
     }
     write_private(root / "node-identity.json", json.dumps(identity, indent=2) + "\n")
     write_private(root / "dev-config.json", json.dumps(config, indent=2) + "\n")
+    # Keep generated secrets out of Git without overwriting existing ignore rules.
+    gitignore = Path.cwd() / ".gitignore"
+    ignore_line = ".proxima-dev/"
+    existing = gitignore.read_text(encoding="utf-8") if gitignore.exists() else ""
+    if ignore_line not in {line.strip() for line in existing.splitlines()}:
+        separator = "" if not existing or existing.endswith("\n") else "\n"
+        gitignore.write_text(existing + separator + ignore_line + "\n", encoding="utf-8")
     print("Local developer credentials created.")
     print(f"Config:   {root / 'dev-config.json'}")
     print(f"Identity: {root / 'node-identity.json'}")

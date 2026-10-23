@@ -9,9 +9,7 @@ import argparse
 import hashlib
 import hmac
 import json
-import os
 import secrets
-import sys
 import time
 import uuid
 from pathlib import Path
@@ -58,9 +56,6 @@ def init(args: argparse.Namespace) -> None:
     }
     write_private(root / "node-identity.json", json.dumps(identity, indent=2) + "\n")
     write_private(root / "dev-config.json", json.dumps(config, indent=2) + "\n")
-    # Ignore the generated directory even if this repository has no .gitignore.
-    gitignore = root / ".gitignore"
-    write_private(gitignore, "*\n!.gitignore\n")
     print("Local developer credentials created.")
     print(f"Config:   {root / 'dev-config.json'}")
     print(f"Identity: {root / 'node-identity.json'}")

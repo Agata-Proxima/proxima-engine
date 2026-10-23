@@ -14,7 +14,7 @@
   <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-wire%20protocol-336791.svg">
 </p>
 
-**Start here:** [Quickstart](docs/QUICKSTART.md) · [Architecture](docs/ARCHITECTURE.md) · [Tenant isolation lab](docs/TENANT_ISOLATION.md) · [API & health](docs/API.md) · [Security](docs/SECURITY.md) · [Hosted platform](https://agataproxima.com)
+**Start here:** [Quickstart](docs/QUICKSTART.md) · [Local developer mode — no hosted account required](docs/LOCAL_DEVELOPMENT.md) · [Architecture](docs/ARCHITECTURE.md) · [Tenant isolation lab](docs/TENANT_ISOLATION.md) · [API & health](docs/API.md) · [Security](docs/SECURITY.md) · [Hosted platform](https://agataproxima.com)
 
 ## What is Agata Proxima?
 
@@ -101,7 +101,7 @@ Use [API, health, and metrics](docs/API.md), [Operations](docs/OPERATIONS.md), a
 
 | Guide | What it answers |
 |---|---|
-| [Quickstart](docs/QUICKSTART.md) | Run a local stack and execute a real SQL query |
+| [Quickstart](docs/QUICKSTART.md) | Run a local stack and execute a real SQL query |\n| [Local developer mode](docs/LOCAL_DEVELOPMENT.md) | Generate local node identity and short-lived test tenant tokens without Cloud or billing |
 | [Architecture](docs/ARCHITECTURE.md) | Components, request lifecycle, trust boundaries |
 | [Configuration](docs/CONFIGURATION.md) | Environment variables, defaults, and security-sensitive settings |
 | [Tenant isolation](docs/TENANT_ISOLATION.md) | Signed tenant context, PostgreSQL roles, RLS, negative tests |
@@ -117,7 +117,7 @@ Use [API, health, and metrics](docs/API.md), [Operations](docs/OPERATIONS.md), a
 | [Support](docs/SUPPORT.md) | Where to ask questions and report security issues |
 | [Contributing](CONTRIBUTING.md) | Local development and pull-request expectations |
 | [Code of Conduct](CODE_OF_CONDUCT.md) | Community standards |
-| [Copyright & brand](COPYRIGHT.md) | Source license versus protected brand assets |
+| [Copyright & brand](COPYRIGHT.md) | Source license versus protected brand assets |\n| [Open-source scope and responsibility](docs/OPEN_SOURCE_SCOPE.md) | Self-managed use, warranty disclaimer, responsibility, and support boundaries |
 | [Security policy](SECURITY.md) | Private vulnerability reporting guidance |
 
 ## Hosted Cloud, plans, and support
@@ -142,7 +142,7 @@ The hosted account, organization, team, node-registration, and billing workflows
 
 ## Open-source scope and brand
 
-The Engine source and documentation in this repository are distributed under the [MIT License](LICENSE), subject to the license text. The separate hosted service and its private source code are not included. **The Agata Proxima name, orbit logo, and other brand artwork are reserved brand assets and are not granted for reuse by the Engine source license.** See [COPYRIGHT.md](COPYRIGHT.md) for the scope and limitations of these statements. A source-code license cannot promise that every form of copying is technically preventable; trademark and copyright enforcement depend on applicable law.
+The Engine source and documentation in this repository are distributed under the [MIT License](LICENSE), subject to the license text. See [Open-source scope and responsibility](docs/OPEN_SOURCE_SCOPE.md) for a plain-language explanation of self-managed deployments, support boundaries, and the license's warranty disclaimer. The separate hosted service and its private source code are not included. **The Agata Proxima name, orbit logo, and other brand artwork are reserved brand assets and are not granted for reuse by the Engine source license.** See [COPYRIGHT.md](COPYRIGHT.md) for the scope and limitations of these statements. A source-code license cannot promise that every form of copying is technically preventable; trademark and copyright enforcement depend on applicable law.
 
 ## Contribute
 

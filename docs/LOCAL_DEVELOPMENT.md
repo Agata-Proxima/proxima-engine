@@ -40,7 +40,7 @@ Run from the repository root:
 python scripts/dev-bootstrap.py init
 ```
 
-PowerShell uses the same command if Python is available as `python`. The command creates `.proxima-dev/dev-config.json` and `.proxima-dev/node-identity.json`. The files contain generated secrets and are private local artifacts. The script writes an ignore rule inside the generated directory; do not commit either file.
+PowerShell uses the same command if Python is available as `python`. The command creates `.proxima-dev/dev-config.json` and `.proxima-dev/node-identity.json`. The files contain generated secrets and are private local artifacts. The script adds `.proxima-dev/` to the repository-root `.gitignore` without replacing existing ignore rules; do not commit generated credentials.
 
 The bootstrap is offline. It uses Python's cryptographic random generator and UUID library, and makes no network request.
 

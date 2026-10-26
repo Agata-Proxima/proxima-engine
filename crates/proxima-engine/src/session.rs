@@ -532,6 +532,52 @@ mod tests {
     }
 
     #[test]
+    fn rejects_invalid_tenant_signature() {
+        let verifier = verifier();
+        let mut token = verifier.sign_for_test("tenant_a", u64::MAX);
+        let last = token.pop().unwrap();
+        token.push(if last == 'a' { 'b' } else { 'a' });
+        let error = prepare_startup(
+            crate::protocol::PROTOCOL_3_0,
+            vec![(TENANT_TOKEN_PARAMETER.into(), token)],
+            Some(&verifier),
+            "proxima_tenant_",
+        )
+        .unwrap_err();
+        assert_eq!(error.kind(), io::ErrorKind::PermissionDenied);
+    }
+
+    #[test]
+    fn tenant_switch_between_connections_maps_to_distinct_roles() {
+        let verifier = verifier();
+        for (tenant, role) in [
+            ("tenant_a", "proxima_tenant_tenant_a"),
+            ("tenant_b", "proxima_tenant_tenant_b"),
+            ("tenant_a", "proxima_tenant_tenant_a"),
+        ] {
+            let token = verifier.sign_for_test(tenant, u64::MAX);
+            let (startup, context) = prepare_startup(
+                crate::protocol::PROTOCOL_3_0,
+                vec![
+                    ("user".into(), "proxima".into()),
+                    (TENANT_TOKEN_PARAMETER.into(), token),
+                ],
+                Some(&verifier),
+                "proxima_tenant_",
+            )
+            .unwrap();
+            assert_eq!(context.unwrap().tenant_id, tenant);
+            assert_eq!(
+                startup,
+                StartupPacket::Startup {
+                    protocol_version: crate::protocol::PROTOCOL_3_0,
+                    parameters: vec![("user".into(), role.into())],
+                }
+            );
+        }
+    }
+
+    #[test]
     fn rejects_duplicate_tokens() {
         let verifier = verifier();
         let token = verifier.sign_for_test("tenant_a", u64::MAX);

@@ -4,14 +4,7 @@ This guide covers building the Engine container and deploying it beside an exist
 
 ## Deployment topology
 
-```mermaid
-flowchart LR
-  App[Application service] -->|private network| Engine[Proxima Engine container]
-  Engine -->|private database connection| DB[(PostgreSQL)]
-  Monitor[Restricted monitoring] --> Health[Health and metrics listeners]
-  Health -. localhost or private network only .-> Monitor
-  Cloud[Agata Proxima hosted control plane] -. outbound enrollment when configured .-> Engine
-```
+![Deployment topology](diagrams/deployment.svg)
 
 Keep PostgreSQL, the Engine proxy, and unauthenticated status/metrics listeners off the public internet. Apply network policy, TLS, secret management, persistent storage, and backups appropriate to your environment.
 

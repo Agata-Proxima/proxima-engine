@@ -21,18 +21,7 @@ Choose a task and go directly to the guide. This repository contains the public 
 
 ## Hosted product and support
 
-```mermaid
-flowchart LR
-  Start[Choose a task] --> Quick[Quickstart]
-  Start --> Build[Build and integrate]
-  Start --> Secure[Security and tenant isolation]
-  Start --> Run[Deploy and operate]
-  Start --> Cloud[Hosted account, node enrollment and billing]
-  Quick --> Architecture[Architecture reference]
-  Build --> API[API and driver guides]
-  Secure --> Verify[Verification and security guides]
-  Run --> Ops[Operations and troubleshooting]
-```
+![Documentation navigation](diagrams/documentation-navigation.svg)
 
 ## Hosted product and support
 

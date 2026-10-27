@@ -6,14 +6,7 @@ The examples below use local addresses and `sslmode=disable` for development onl
 
 ## Connection flow
 
-```mermaid
-flowchart LR
-  Backend[Application backend] --> Driver[Existing PostgreSQL driver]
-  Driver -->|PostgreSQL wire protocol| Engine[Proxima Engine]
-  Engine -->|validated tenant context and role routing| DB[(PostgreSQL + RLS)]
-  Backend -. creates trusted tenant context .-> Token[Signed tenant token]
-  Token -. connection startup option .-> Driver
-```
+![Application integration path](diagrams/integrations.svg)
 
 Keep tenant-token signing keys on trusted server-side components. Never generate tenant tokens in browser code or ship signing secrets to clients.
 

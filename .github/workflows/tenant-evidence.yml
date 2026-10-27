@@ -1,0 +1,45 @@
+name: Tenant isolation evidence
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  integration-evidence:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: proxima
+          POSTGRES_PASSWORD: proxima-dev-only
+          POSTGRES_DB: proxima_dev
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U proxima -d proxima_dev"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      DATABASE_URL: postgres://proxima:proxima-dev-only@127.0.0.1:5432/proxima_dev
+      PROXIMA_TEST_DATABASE_URL: postgres://proxima:proxima-dev-only@127.0.0.1:5432/proxima_dev
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Run Rust test suite with PostgreSQL
+        run: |
+          set -o pipefail
+          cargo test -p proxima-engine -- --nocapture 2>&1 | tee tenant-evidence.log
+      - name: Publish test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tenant-isolation-test-log
+          path: tenant-evidence.log
+          if-no-files-found: warn

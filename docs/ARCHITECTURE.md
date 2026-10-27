@@ -25,6 +25,35 @@ A normal connection proceeds through these stages:
 
 The Engine does not pool and retarget one physical PostgreSQL session between tenants. Each accepted client connection has its own upstream session.
 
+## Tenant verification and session lifecycle
+
+```mermaid
+sequenceDiagram
+  participant App as Trusted application backend
+  participant Engine as Proxima Engine
+  participant PG as PostgreSQL
+  App->>Engine: PostgreSQL startup with signed tenant token
+  Engine->>Engine: Validate signature, expiry and tenant ID
+  alt Missing or invalid token
+    Engine-->>App: Reject connection (fail closed)
+  else Valid tenant token
+    Engine->>PG: Connect using derived tenant database role
+    PG-->>Engine: PostgreSQL authentication challenge
+    Engine-->>App: Relay authentication challenge
+    App->>Engine: Authentication response
+    Engine->>PG: Relay authentication response
+    PG-->>Engine: AuthenticationOk and ReadyForQuery
+    Engine-->>App: ReadyForQuery
+    App->>Engine: SQL query
+    Engine->>PG: Relay SQL within bound session
+    PG->>PG: Apply role grants and RLS
+    PG-->>Engine: Query result or permission error
+    Engine-->>App: Relay result or error
+  end
+```
+
+The diagram summarizes the intended protocol flow; PostgreSQL authentication can involve multiple messages, and PostgreSQL grants and RLS remain responsible for database authorization.
+
 ## Tenant token contract
 
 The standard token format is:
@@ -90,6 +119,23 @@ Run the Engine close to the PostgreSQL service it protects. Restrict network acc
 ### Hosted Cloud plus customer Engine
 
 The private hosted Cloud and the public Engine have separate responsibilities. The Cloud may coordinate authorized account and node workflows; the Engine handles database-facing traffic in the customer's environment. Enrollment does not replace application authorization, PostgreSQL grants, RLS, or local operational monitoring. The public repository documents only the Engine-side contract.
+
+## Control plane and data plane separation
+
+```mermaid
+flowchart TB
+  subgraph Hosted["Private hosted control plane (separate repository)"]
+    Admin["Authorized organization / operator"] --> Cloud["Node enrollment and management"]
+  end
+  subgraph Customer["Customer-controlled runtime"]
+    Backend["Trusted application backend"] -->|"PostgreSQL connection + signed context"| Proxy["Open-source Proxima Engine"]
+    Proxy -->|"Tenant-specific role"| PG[("Existing PostgreSQL: grants and RLS")]
+    Proxy --> Health["Local health / metrics / evidence"]
+  end
+  Cloud -. "Optional authenticated enrollment and management" .-> Proxy
+```
+
+The hosted control plane is not in the SQL query path. The Engine can operate without a hosted account in documented local development mode.
 
 ## Failure boundaries
 

@@ -34,7 +34,7 @@ flowchart LR
     R --> P[("PostgreSQL<br/>grants + RLS")]
     E --> H["Local health / status"]
     E --> M["Prometheus metrics"]
-    C["Agata Proxima Cloud<br/>private hosted control plane"] -. "authorized node enrollment / management contract" .-> E
+    C["Agata Proxima Cloud<br/>private hosted control plane"] -.->|"Authorized node enrollment / management"| E
 ```
 
 The dotted line represents the control-plane boundary. This public repository documents the Engine-side contract; it does not expose private Cloud source code or promise that every hosted feature is available in a self-managed installation.
@@ -101,7 +101,8 @@ Use [API, health, and metrics](docs/API.md), [Operations](docs/OPERATIONS.md), a
 
 | Guide | What it answers |
 |---|---|
-| [Quickstart](docs/QUICKSTART.md) | Run a local stack and execute a real SQL query |\n| [Local developer mode](docs/LOCAL_DEVELOPMENT.md) | Generate local node identity and short-lived test tenant tokens without Cloud or billing |
+| [Quickstart](docs/QUICKSTART.md) | Run a local stack and execute a real SQL query |
+| [Local developer mode](docs/LOCAL_DEVELOPMENT.md) | Generate local node identity and short-lived test tenant tokens without Cloud or billing |
 | [Architecture](docs/ARCHITECTURE.md) | Components, request lifecycle, trust boundaries |
 | [Configuration](docs/CONFIGURATION.md) | Environment variables, defaults, and security-sensitive settings |
 | [Tenant isolation](docs/TENANT_ISOLATION.md) | Signed tenant context, PostgreSQL roles, RLS, negative tests |
@@ -117,7 +118,8 @@ Use [API, health, and metrics](docs/API.md), [Operations](docs/OPERATIONS.md), a
 | [Support](docs/SUPPORT.md) | Where to ask questions and report security issues |
 | [Contributing](CONTRIBUTING.md) | Local development and pull-request expectations |
 | [Code of Conduct](CODE_OF_CONDUCT.md) | Community standards |
-| [Copyright & brand](COPYRIGHT.md) | Source license versus protected brand assets |\n| [Open-source scope and responsibility](docs/OPEN_SOURCE_SCOPE.md) | Self-managed use, warranty disclaimer, responsibility, and support boundaries |
+| [Copyright & brand](COPYRIGHT.md) | Source license versus protected brand assets |
+| [Open-source scope and responsibility](docs/OPEN_SOURCE_SCOPE.md) | Self-managed use, warranty disclaimer, responsibility, and support boundaries |
 | [Security policy](SECURITY.md) | Private vulnerability reporting guidance |
 
 ## Hosted Cloud, plans, and support
@@ -135,7 +137,7 @@ flowchart TD
   Cloud -->|authorized node enrollment| Engine
   App[Application / PostgreSQL driver] --> Engine
   Engine --> DB[(PostgreSQL)]
-  Cloud -. account, team, plans and billing .-> Customer
+  Cloud -.->|"Account, team, plans and billing"| Customer
 ```
 
 The hosted account, organization, team, node-registration, and billing workflows belong to the separate private application. This repository explains the integration boundary without exposing private dashboard source code or endpoints.

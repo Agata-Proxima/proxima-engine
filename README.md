@@ -27,15 +27,7 @@ The Engine is not a replacement for PostgreSQL, your application authorization, 
 
 ## See the request path
 
-```mermaid
-flowchart LR
-    U["Your application<br/>existing PostgreSQL driver"] --> E["Proxima Engine<br/>Rust data plane"]
-    E -->|verified tenant context| R["Tenant database role"]
-    R --> P[("PostgreSQL<br/>grants + RLS")]
-    E --> H["Local health / status"]
-    E --> M["Prometheus metrics"]
-    C["Agata Proxima Cloud<br/>private hosted control plane"] -.->|"Authorized node enrollment / management"| E
-```
+![Architecture diagram](docs/diagrams/request-path.svg)
 
 The dotted line represents the control-plane boundary. This public repository documents the Engine-side contract; it does not expose private Cloud source code or promise that every hosted feature is available in a self-managed installation.
 
@@ -129,16 +121,7 @@ Use [API, health, and metrics](docs/API.md), [Operations](docs/OPERATIONS.md), a
 - **Support:** [support@agataproxima.com](mailto:support@agataproxima.com)
 - **Security vulnerabilities:** report them privately as described in [SECURITY.md](SECURITY.md).
 
-```mermaid
-flowchart TD
-  Dev[Developer] --> Docs[Public Engine documentation]
-  Docs --> Engine[Open-source Proxima Engine]
-  Customer[Customer organization] --> Cloud[Agata Proxima hosted control plane]
-  Cloud -->|authorized node enrollment| Engine
-  App[Application / PostgreSQL driver] --> Engine
-  Engine --> DB[(PostgreSQL)]
-  Cloud -.->|"Account, team, plans and billing"| Customer
-```
+![Tenant verification lifecycle](docs/diagrams/cloud-boundary.svg)
 
 The hosted account, organization, team, node-registration, and billing workflows belong to the separate private application. This repository explains the integration boundary without exposing private dashboard source code or endpoints.
 

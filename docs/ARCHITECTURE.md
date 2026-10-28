@@ -2,7 +2,13 @@
 
 Agata Proxima is security infrastructure for multi-tenant applications. Proxima Engine is the public Rust data-plane process in this repository. It sits between a PostgreSQL client and an existing PostgreSQL server; it does not replace the database, an ORM, or application-level authorization.
 
-## Visual architecture\n\n![Agata Proxima tenant isolation architecture](assets/proxima-architecture.svg)\n\n[Open full-size SVG](assets/proxima-architecture.svg). This custom vector diagram works independently of Mermaid rendering.\n\n## Request path
+## Visual architecture
+
+![Agata Proxima tenant isolation architecture](assets/proxima-architecture.svg)
+
+[Open full-size SVG](assets/proxima-architecture.svg). This custom vector diagram works independently of Mermaid rendering.
+
+## Request path
 
 ![request path architecture illustration](assets/request-path.svg)
 

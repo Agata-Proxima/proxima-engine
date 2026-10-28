@@ -25,9 +25,9 @@ Agata Proxima is designed to make tenant boundaries easier to operate and verify
 
 The Engine is not a replacement for PostgreSQL, your application authorization, or database Row-Level Security (RLS). PostgreSQL grants and RLS policies remain essential. Read the [security model](docs/SECURITY.md) before using sensitive workloads.
 
-## See the request path
+## Architecture at a glance
 
-![Agata Proxima tenant-isolation architecture](docs/assets/proxima-architecture.svg)\n\n[View full-size vector diagram](docs/assets/proxima-architecture.svg) · [Detailed Mermaid sequence and deployment diagrams](docs/ARCHITECTURE.md)
+![Agata Proxima tenant-isolation architecture](docs/assets/proxima-architecture.svg)\n\n[View full-size vector diagram](docs/assets/proxima-architecture.svg) · [Detailed architecture and deployment diagrams](docs/ARCHITECTURE.md)
 
 The dotted line represents the control-plane boundary. This public repository documents the Engine-side contract; it does not expose private Cloud source code or promise that every hosted feature is available in a self-managed installation.
 
@@ -122,16 +122,9 @@ Use [API, health, and metrics](docs/API.md), [Operations](docs/OPERATIONS.md), a
 - **Support:** [support@agataproxima.com](mailto:support@agataproxima.com)
 - **Security vulnerabilities:** report them privately as described in [SECURITY.md](SECURITY.md).
 
-```mermaid
-flowchart TD
-  Dev[Developer] --> Docs[Public Engine documentation]
-  Docs --> Engine[Open-source Proxima Engine]
-  Customer[Customer organization] --> Cloud[Agata Proxima hosted control plane]
-  Cloud -->|authorized node enrollment| Engine
-  App[Application / PostgreSQL driver] --> Engine
-  Engine --> DB[(PostgreSQL)]
-  Cloud -.->|"Account, team, plans and billing"| Customer
-```
+![ecosystem architecture illustration](docs/assets/ecosystem.svg)
+
+[Open full-size diagram](docs/assets/ecosystem.svg)
 
 The hosted account, organization, team, node-registration, and billing workflows belong to the separate private application. This repository explains the integration boundary without exposing private dashboard source code or endpoints.
 

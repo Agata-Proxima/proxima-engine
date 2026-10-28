@@ -4,22 +4,9 @@ This guide describes the public integration boundary without exposing private so
 
 ## Two cooperating products
 
-```mermaid
-flowchart TB
-  subgraph Hosted["Agata Proxima Cloud — private hosted product"]
-    Account["Account and organization"]
-    Team["Team membership and permissions"]
-    Plans["Plan, usage, billing"]
-    Registry["Authorized node registration"]
-  end
-  subgraph Customer["Your environment"]
-    App["Application backend"]
-    Engine["Proxima Engine — public Rust data plane"]
-    DB[("PostgreSQL: roles + RLS")]
-    App --> Engine --> DB
-  end
-  Registry -. "authorized enrollment contract" .-> Engine
-```
+![cloud boundary architecture illustration](assets/cloud-boundary.svg)
+
+[Open full-size diagram](assets/cloud-boundary.svg)
 
 The diagram is conceptual. The hosted Cloud product and this repository have different source and access boundaries.
 

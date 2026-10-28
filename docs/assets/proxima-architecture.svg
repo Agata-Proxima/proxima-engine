@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620" role="img" aria-labelledby="title desc">
+<title id="title">Agata Proxima — PostgreSQL tenant isolation architecture</title>
+<desc id="desc">A trusted application connects to the Rust Engine, which validates tenant context, rejects invalid tokens, and routes authorized sessions to tenant-specific PostgreSQL roles protected by grants and RLS. Optional Cloud management stays outside the SQL path.</desc>
+<defs>
+  <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#091528"/><stop offset="1" stop-color="#111c36"/></linearGradient>
+  <linearGradient id="accent" x2="1" y2="0"><stop stop-color="#39D6B0"/><stop offset="1" stop-color="#55A7FF"/></linearGradient>
+  <filter id="glow"><feGaussianBlur stdDeviation="9"/></filter>
+  <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10" fill="none" stroke="#6EE7D2" stroke-width="1.5"/></marker>
+</defs>
+<rect width="1200" height="620" rx="28" fill="url(#bg)"/>
+<circle cx="1090" cy="80" r="210" fill="#1B3862" opacity=".2"/>
+<g font-family="Arial, Helvetica, sans-serif">
+<text x="54" y="68" font-size="30" font-weight="700" fill="#F4F8FF">AGATA <tspan fill="#54DCC2">PROXIMA</tspan></text>
+<text x="54" y="102" font-size="16" fill="#AFC2DA">PostgreSQL tenant isolation · Verified session boundaries</text>
+<text x="54" y="151" font-size="12" letter-spacing="2" fill="#78A6BF">DATA PLANE / CUSTOMER ENVIRONMENT</text>
+<rect x="43" y="173" width="1114" height="308" rx="22" fill="#12223B" stroke="#294361"/>
+<rect x="74" y="222" width="222" height="145" rx="18" fill="#1A304C" stroke="#3C607E"/>
+<text x="185" y="264" font-size="15" text-anchor="middle" fill="#B5D0E6">01 / TRUSTED</text>
+<text x="185" y="294" font-size="23" font-weight="700" text-anchor="middle" fill="#FFFFFF">Application</text>
+<text x="185" y="323" font-size="14" text-anchor="middle" fill="#B8CBE0">PostgreSQL driver</text>
+<path d="M296 294 H364" stroke="#6EE7D2" stroke-width="3" marker-end="url(#arrow)"/>
+<text x="331" y="279" font-size="11" text-anchor="middle" fill="#A8DCCF">token</text>
+<rect x="370" y="204" width="335" height="182" rx="20" fill="#17364D" stroke="#4EDDB9" stroke-width="2"/>
+<rect x="390" y="222" width="294" height="5" rx="2" fill="url(#accent)"/>
+<text x="537" y="260" font-size="15" text-anchor="middle" fill="#8EEAD7">02 / RUST DATA PLANE</text>
+<text x="537" y="296" font-size="25" font-weight="700" text-anchor="middle" fill="#FFFFFF">Proxima Engine</text>
+<text x="537" y="326" font-size="14" text-anchor="middle" fill="#D0E2F2">Verify token · Bind tenant role</text>
+<text x="537" y="350" font-size="13" text-anchor="middle" fill="#D0E2F2">Reject invalid context</text>
+<path d="M705 294 H774" stroke="#6EE7D2" stroke-width="3" marker-end="url(#arrow)"/>
+<text x="741" y="278" font-size="11" text-anchor="middle" fill="#A8DCCF">role</text>
+<rect x="780" y="222" width="344" height="145" rx="18" fill="#1A304C" stroke="#3C607E"/>
+<text x="952" y="264" font-size="15" text-anchor="middle" fill="#B5D0E6">03 / EXISTING DATABASE</text>
+<text x="952" y="294" font-size="23" font-weight="700" text-anchor="middle" fill="#FFFFFF">PostgreSQL</text>
+<text x="952" y="324" font-size="14" text-anchor="middle" fill="#B8CBE0">Tenant roles · Grants · RLS</text>
+<path d="M537 386 V424" stroke="#EFA4A4" stroke-width="2" stroke-dasharray="5 6"/>
+<rect x="420" y="425" width="234" height="38" rx="12" fill="#482B40" stroke="#9C6273"/>
+<text x="537" y="450" font-size="13" text-anchor="middle" fill="#FFE1E1">Invalid token → deny</text>
+<rect x="43" y="510" width="1114" height="74" rx="18" fill="#10243B" stroke="#294361"/>
+<text x="70" y="540" font-size="13" font-weight="700" fill="#89E9D5">OPTIONAL CONTROL PLANE</text>
+<text x="70" y="562" font-size="13" fill="#BCD0E2">Agata Proxima Cloud · Authorized node enrollment and management only</text>
+<path d="M755 547 H1117" stroke="#5B86A4" stroke-width="2" stroke-dasharray="6 6"/>
+<text x="936" y="535" font-size="11" text-anchor="middle" fill="#91AFC4">Not in SQL query path</text>
+</g>
+</svg>

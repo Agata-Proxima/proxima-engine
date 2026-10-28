@@ -14,7 +14,13 @@
   <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-wire%20protocol-336791.svg">
 </p>
 
-**Start here:** [Quickstart](docs/QUICKSTART.md) · [Local developer mode — no hosted account required](docs/LOCAL_DEVELOPMENT.md) · [Engine CLI](docs/CLI.md) · [Architecture](docs/ARCHITECTURE.md) · [Tenant isolation lab](docs/TENANT_ISOLATION.md) · [API & health](docs/API.md) · [Security](docs/SECURITY.md) · [Hosted platform](https://agataproxima.com)
+**Start here:** [Try the tenant-isolation challenge](docs/TENANT_ISOLATION.md) · [Launch evaluation](docs/LAUNCH.md) · [Quickstart](docs/QUICKSTART.md) · [Local developer mode — no hosted account required](docs/LOCAL_DEVELOPMENT.md) · [Engine CLI](docs/CLI.md) · [Architecture](docs/ARCHITECTURE.md) · [Tenant isolation lab](docs/TENANT_ISOLATION.md) · [API & health](docs/API.md) · [Security](docs/SECURITY.md) · [Hosted platform](https://agataproxima.com)
+
+## Challenge: can Tenant A read Tenant B's data?
+
+Run the [two-tenant isolation lab](docs/TENANT_ISOLATION.md) against disposable PostgreSQL. It demonstrates a permitted Tenant A read, an invisible Tenant B row, and a rejected cross-tenant write using signed tenant context, tenant-specific database roles, and PostgreSQL RLS. **A healthy proxy alone is not proof of isolation.** Reproduce the positive and negative tests and share sanitized findings in [GitHub Issues](https://github.com/Agata-Proxima/proxima-engine/issues). For vulnerabilities, follow [private security reporting](SECURITY.md).
+
+**Explore:** [Run the Engine](docs/QUICKSTART.md) · [Verify isolation](docs/TENANT_ISOLATION.md) · [Star or follow the public Engine](https://github.com/Agata-Proxima/proxima-engine) · [Explore hosted Cloud](https://agataproxima.com)
 
 ## What is Agata Proxima?
 

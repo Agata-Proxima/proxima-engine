@@ -27,15 +27,7 @@ The Engine is not a replacement for PostgreSQL, your application authorization, 
 
 ## See the request path
 
-```mermaid
-flowchart LR
-    U["Your application<br/>existing PostgreSQL driver"] --> E["Proxima Engine<br/>Rust data plane"]
-    E -->|verified tenant context| R["Tenant database role"]
-    R --> P[("PostgreSQL<br/>grants + RLS")]
-    E --> H["Local health / status"]
-    E --> M["Prometheus metrics"]
-    C["Agata Proxima Cloud<br/>private hosted control plane"] -.->|"Authorized node enrollment / management"| E
-```
+![Agata Proxima tenant-isolation architecture](docs/assets/proxima-architecture.svg)\n\n[View full-size vector diagram](docs/assets/proxima-architecture.svg) · [Detailed Mermaid sequence and deployment diagrams](docs/ARCHITECTURE.md)
 
 The dotted line represents the control-plane boundary. This public repository documents the Engine-side contract; it does not expose private Cloud source code or promise that every hosted feature is available in a self-managed installation.
 

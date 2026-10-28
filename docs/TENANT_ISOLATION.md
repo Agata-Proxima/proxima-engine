@@ -55,7 +55,7 @@ Create a strong key. On Linux/macOS:
 openssl rand -hex 32
 ```
 
-Copy the generated value into `.env` as `PROXIMA_TENANT_SIGNING_KEY=<generated-value>`. Treat it as a secret. Restart the Engine so it reads the value:
+For the local CLI path, run `python3 scripts/agata.py init` first and copy the **literal** `tenant_signing_key` from `.proxima-dev/dev-config.json` into `.env` as `PROXIMA_TENANT_SIGNING_KEY=<local-key>`. Treat it as a secret. Alternatively, use `openssl rand -hex 32` and sign tokens using the same literal key bytes. Restart the Engine so it reads the value:
 
 ```bash
 docker compose -f compose.dev.yaml up -d --build --force-recreate engine
@@ -73,11 +73,11 @@ v1.<tenant_id>.<expiry_unix_seconds>.<hex_hmac_sha256>
 
 The HMAC-SHA256 signature covers the exact string `v1.<tenant_id>.<expiry_unix_seconds>`. Tenant IDs may contain ASCII letters, numbers, hyphens, and underscores. The Engine rejects expired, malformed, or incorrectly signed tokens.
 
-For a **local test only**, set the same secret in your shell and generate a five-minute token using Python:
+For a **local test only**, mint a five-minute token with the Engine CLI (after running `init`):
 
 ```bash
 export PROXIMA_TENANT_SIGNING_KEY='<paste-the-same-local-key>'
-TENANT_TOKEN=$(python3 -c 'import os,time,hmac,hashlib; tenant="tenant_a"; expiry=str(int(time.time())+300); payload=f"v1.{tenant}.{expiry}"; print(payload+"."+hmac.new(os.environ["PROXIMA_TENANT_SIGNING_KEY"].encode(),payload.encode(),hashlib.sha256).hexdigest())')
+TENANT_TOKEN=$(python3 scripts/agata.py token --tenant tenant_a --ttl 300)
 ```
 
 In a real application, generate tokens only on a trusted server after checking the authenticated user's organization and tenant membership. Never accept an arbitrary tenant ID directly from an untrusted client.

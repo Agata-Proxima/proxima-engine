@@ -37,7 +37,7 @@ This first demo uses the default local PostgreSQL credentials and leaves tenant 
 Run from the repository root:
 
 ```bash
-python scripts/dev-bootstrap.py init
+python scripts/agata.py init
 ```
 
 PowerShell uses the same command if Python is available as `python`. The command creates `.proxima-dev/dev-config.json` and `.proxima-dev/node-identity.json`. The files contain generated secrets and are private local artifacts. The script adds `.proxima-dev/` to the repository-root `.gitignore` without replacing existing ignore rules; do not commit generated credentials.
@@ -47,13 +47,13 @@ The bootstrap is offline. It uses Python's cryptographic random generator and UU
 ## 3. Mint a local tenant-context token
 
 ```bash
-python scripts/dev-bootstrap.py token --tenant tenant_a --ttl 300
+python scripts/agata.py token --tenant tenant_a --ttl 300
 ```
 
 Copy the printed token into your local test client environment as `PROXIMA_TENANT_TOKEN`. The token expires after five minutes. To mint a token for a second test tenant:
 
 ```bash
-python scripts/dev-bootstrap.py token --tenant tenant_b --ttl 300
+python scripts/agata.py token --tenant tenant_b --ttl 300
 ```
 
 The CLI signs the documented Engine format `v1.<tenant_id>.<expiry_unix_seconds>.<hex_hmac_sha256>` with the same local tenant-signing key stored in the generated config. The Engine must be configured with that exact value as `PROXIMA_TENANT_SIGNING_KEY` for token enforcement to be enabled. The script does not automatically configure an already-running container.

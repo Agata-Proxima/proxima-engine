@@ -38,9 +38,15 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
       - name: Cache Rust build
         uses: Swatinem/rust-cache@v2
+      - name: Test public Engine CLI
+        run: python3 -m unittest discover -s tests_cli -v
       - name: Run engine tests
         run: cargo test -p proxima-engine
       - name: Build release engine
         run: cargo build -p proxima-engine --release
+      - name: Install PostgreSQL client for acceptance test
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Verify two-tenant isolation against PostgreSQL
+        run: bash scripts/test-two-tenants.sh
       - name: Build container image
         run: docker build -t proxima-engine:ci .

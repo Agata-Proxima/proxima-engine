@@ -14,7 +14,7 @@
   <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-wire%20protocol-336791.svg">
 </p>
 
-**Start here:** [Quickstart](docs/QUICKSTART.md) · [Local developer mode — no hosted account required](docs/LOCAL_DEVELOPMENT.md) · [Architecture](docs/ARCHITECTURE.md) · [Tenant isolation lab](docs/TENANT_ISOLATION.md) · [API & health](docs/API.md) · [Security](docs/SECURITY.md) · [Hosted platform](https://agataproxima.com)
+**Start here:** [Quickstart](docs/QUICKSTART.md) · [Local developer mode — no hosted account required](docs/LOCAL_DEVELOPMENT.md) · [Engine CLI](docs/CLI.md) · [Architecture](docs/ARCHITECTURE.md) · [Tenant isolation lab](docs/TENANT_ISOLATION.md) · [API & health](docs/API.md) · [Security](docs/SECURITY.md) · [Hosted platform](https://agataproxima.com)
 
 ## What is Agata Proxima?
 
@@ -102,6 +102,7 @@ Use [API, health, and metrics](docs/API.md), [Operations](docs/OPERATIONS.md), a
 | Guide | What it answers |
 |---|---|
 | [Quickstart](docs/QUICKSTART.md) | Run a local stack and execute a real SQL query |
+| [Engine CLI](docs/CLI.md) | Local init, token minting, token verification, and health checks |
 | [Local developer mode](docs/LOCAL_DEVELOPMENT.md) | Generate local node identity and short-lived test tenant tokens without Cloud or billing |
 | [Architecture](docs/ARCHITECTURE.md) | Components, request lifecycle, trust boundaries |
 | [Configuration](docs/CONFIGURATION.md) | Environment variables, defaults, and security-sensitive settings |

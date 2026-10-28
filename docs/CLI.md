@@ -2,7 +2,7 @@
 
 This is a real local Engine command-line tool implemented with Python 3.10+ standard library. It is **not** an npm package or the separate hosted Cloud CLI.
 
-From the repository root:
+From the repository root, install an editable local CLI with Python 3.10+ and pip:\n\n```bash\npython -m pip install -e .\nagata --help\n```\n\nThis creates a real \`agata\` command in the active Python environment. The package is **not published to PyPI**. Alternatively, run the script directly without installing it.\n\nFrom the repository root:
 
 ```bash
 python scripts/agata.py --help

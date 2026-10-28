@@ -6,17 +6,9 @@ This guide is the self-managed path for contributors and developers evaluating t
 
 ## The local trust boundary
 
-```mermaid
-flowchart TD
-  Dev[Developer clones MIT-licensed Engine] --> Init[Local bootstrap script]
-  Init --> Identity[Local node identity JSON]
-  Init --> Key[Local tenant signing key]
-  Key --> Token[CLI mints short-lived tenant token]
-  App[Local test client] -->|PostgreSQL protocol + tenant token| Engine[Local Proxima Engine]
-  Identity -. local node metadata .-> Engine
-  Engine --> DB[(Developer's PostgreSQL + roles/RLS)]
-  Cloud[Hosted Cloud / billing] -. not required .-> Dev
-```
+![local dev architecture illustration](assets/local-dev.svg)
+
+[Open full-size diagram](assets/local-dev.svg)
 
 The local identity is self-issued and only meaningful to your local environment. It does not register a host in Agata Proxima Cloud, and it cannot authenticate to a hosted management API. This separation is intentional: local core-engine development is free and independent; hosted organization management remains a separate service.
 

@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agata-proxima-engine-cli"
+version = "0.1.0"
+description = "Local CLI for the open-source Agata Proxima PostgreSQL Engine"
+readme = "docs/CLI.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{name = "Agata Proxima"}]
+dependencies = []
+
+[project.scripts]
+agata = "agata:main"
+
+[tool.setuptools]
+py-modules = ["agata"]
+package-dir = {"" = "scripts"}

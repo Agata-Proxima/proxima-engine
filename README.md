@@ -27,7 +27,9 @@ The Engine is not a replacement for PostgreSQL, your application authorization, 
 
 ## Architecture at a glance
 
-![Agata Proxima tenant-isolation architecture](docs/assets/proxima-architecture.svg)\n\n[View full-size vector diagram](docs/assets/proxima-architecture.svg) · [Detailed architecture and deployment diagrams](docs/ARCHITECTURE.md)
+![Agata Proxima tenant-isolation architecture](docs/assets/proxima-architecture.svg)
+
+[View full-size vector diagram](docs/assets/proxima-architecture.svg) · [Detailed architecture and deployment diagrams](docs/ARCHITECTURE.md)
 
 The dotted line represents the control-plane boundary. This public repository documents the Engine-side contract; it does not expose private Cloud source code or promise that every hosted feature is available in a self-managed installation.
 

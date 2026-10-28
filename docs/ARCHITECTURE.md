@@ -4,14 +4,9 @@ Agata Proxima is security infrastructure for multi-tenant applications. Proxima 
 
 ## Visual architecture\n\n![Agata Proxima tenant isolation architecture](assets/proxima-architecture.svg)\n\n[Open full-size SVG](assets/proxima-architecture.svg). This custom vector diagram works independently of Mermaid rendering.\n\n## Request path
 
-```mermaid
-flowchart LR
-  App["Application / PostgreSQL driver"] -->|"TCP + PostgreSQL startup"| Engine["Proxima Engine"]
-  Engine -->|"verified tenant → DB role"| DB[("PostgreSQL")]
-  Engine --> Status["Local status + health"]
-  Engine --> Metrics["Prometheus metrics"]
-  Engine --> Ledger["Signed local attestation ledger"]
-```
+![request path architecture illustration](assets/request-path.svg)
+
+[Open full-size diagram](assets/request-path.svg)
 
 A normal connection proceeds through these stages:
 
@@ -27,30 +22,9 @@ The Engine does not pool and retarget one physical PostgreSQL session between te
 
 ## Tenant verification and session lifecycle
 
-```mermaid
-sequenceDiagram
-  participant App as Trusted application backend
-  participant Engine as Proxima Engine
-  participant PG as PostgreSQL
-  App->>Engine: PostgreSQL startup with signed tenant token
-  Engine->>Engine: Validate signature, expiry and tenant ID
-  alt Missing or invalid token
-    Engine-->>App: Reject connection (fail closed)
-  else Valid tenant token
-    Engine->>PG: Connect using derived tenant database role
-    PG-->>Engine: PostgreSQL authentication challenge
-    Engine-->>App: Relay authentication challenge
-    App->>Engine: Authentication response
-    Engine->>PG: Relay authentication response
-    PG-->>Engine: AuthenticationOk and ReadyForQuery
-    Engine-->>App: ReadyForQuery
-    App->>Engine: SQL query
-    Engine->>PG: Relay SQL within bound session
-    PG->>PG: Apply role grants and RLS
-    PG-->>Engine: Query result or permission error
-    Engine-->>App: Relay result or error
-  end
-```
+![session sequence architecture illustration](assets/session-sequence.svg)
+
+[Open full-size diagram](assets/session-sequence.svg)
 
 The diagram summarizes the intended protocol flow; PostgreSQL authentication can involve multiple messages, and PostgreSQL grants and RLS remain responsible for database authorization.
 
@@ -122,18 +96,9 @@ The private hosted Cloud and the public Engine have separate responsibilities. T
 
 ## Control plane and data plane separation
 
-```mermaid
-flowchart TB
-  subgraph Hosted["Private hosted control plane (separate repository)"]
-    Admin["Authorized organization / operator"] --> Cloud["Node enrollment and management"]
-  end
-  subgraph Customer["Customer-controlled runtime"]
-    Backend["Trusted application backend"] -->|"PostgreSQL connection + signed context"| Proxy["Open-source Proxima Engine"]
-    Proxy -->|"Tenant-specific role"| PG[("Existing PostgreSQL: grants and RLS")]
-    Proxy --> Health["Local health / metrics / evidence"]
-  end
-  Cloud -. "Optional authenticated enrollment and management" .-> Proxy
-```
+![control boundary architecture illustration](assets/control-boundary.svg)
+
+[Open full-size diagram](assets/control-boundary.svg)
 
 The hosted control plane is not in the SQL query path. The Engine can operate without a hosted account in documented local development mode.
 

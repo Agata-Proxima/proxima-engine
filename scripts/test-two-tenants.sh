@@ -4,19 +4,19 @@ set -euo pipefail
 export PGHOST=127.0.0.1 PGPORT=5432 PGUSER=proxima PGDATABASE=proxima_dev PGPASSWORD=proxima-dev-only
 psql -v ON_ERROR_STOP=1 <<'SQL'
 DROP SCHEMA IF EXISTS proxima_cli_e2e CASCADE;
-DROP ROLE IF EXISTS proxima_tenant_tenant_a;
-DROP ROLE IF EXISTS proxima_tenant_tenant_b;
-CREATE ROLE proxima_tenant_tenant_a LOGIN PASSWORD 'tenant-a-password' NOSUPERUSER NOBYPASSRLS;
-CREATE ROLE proxima_tenant_tenant_b LOGIN PASSWORD 'tenant-b-password' NOSUPERUSER NOBYPASSRLS;
+DROP ROLE IF EXISTS proxima_tenant_cli_a;
+DROP ROLE IF EXISTS proxima_tenant_cli_b;
+CREATE ROLE proxima_tenant_cli_a LOGIN PASSWORD 'tenant-a-password' NOSUPERUSER NOBYPASSRLS;
+CREATE ROLE proxima_tenant_cli_b LOGIN PASSWORD 'tenant-b-password' NOSUPERUSER NOBYPASSRLS;
 CREATE SCHEMA proxima_cli_e2e;
 CREATE TABLE proxima_cli_e2e.records(tenant_id text NOT NULL, secret text NOT NULL);
-INSERT INTO proxima_cli_e2e.records VALUES ('tenant_a','A-secret'),('tenant_b','B-secret');
+INSERT INTO proxima_cli_e2e.records VALUES ('cli_a','A-secret'),('cli_b','B-secret');
 ALTER TABLE proxima_cli_e2e.records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE proxima_cli_e2e.records FORCE ROW LEVEL SECURITY;
-CREATE POLICY isolate_a ON proxima_cli_e2e.records TO proxima_tenant_tenant_a USING (tenant_id='tenant_a') WITH CHECK (tenant_id='tenant_a');
-CREATE POLICY isolate_b ON proxima_cli_e2e.records TO proxima_tenant_tenant_b USING (tenant_id='tenant_b') WITH CHECK (tenant_id='tenant_b');
-GRANT USAGE ON SCHEMA proxima_cli_e2e TO proxima_tenant_tenant_a,proxima_tenant_tenant_b;
-GRANT SELECT,INSERT ON proxima_cli_e2e.records TO proxima_tenant_tenant_a,proxima_tenant_tenant_b;
+CREATE POLICY isolate_a ON proxima_cli_e2e.records TO proxima_tenant_cli_a USING (tenant_id='cli_a') WITH CHECK (tenant_id='cli_a');
+CREATE POLICY isolate_b ON proxima_cli_e2e.records TO proxima_tenant_cli_b USING (tenant_id='cli_b') WITH CHECK (tenant_id='cli_b');
+GRANT USAGE ON SCHEMA proxima_cli_e2e TO proxima_tenant_cli_a,proxima_tenant_cli_b;
+GRANT SELECT,INSERT ON proxima_cli_e2e.records TO proxima_tenant_cli_a,proxima_tenant_cli_b;
 SQL
 python3 scripts/agata.py init
 export PROXIMA_TENANT_SIGNING_KEY
@@ -32,8 +32,8 @@ for i in $(seq 1 40); do
   sleep 1
 done
 curl -fsS http://127.0.0.1:19090/healthz >/dev/null
-token_a="$(python3 scripts/agata.py token --tenant tenant_a --ttl 300)"
-token_b="$(python3 scripts/agata.py token --tenant tenant_b --ttl 300)"
+token_a="$(python3 scripts/agata.py token --tenant cli_a --ttl 300)"
+token_b="$(python3 scripts/agata.py token --tenant cli_b --ttl 300)"
 run_tenant() {
   local token="$1" password="$2" sql="$3"
   PGPASSWORD="$password" PGOPTIONS="-c proxima_tenant_token=$token" psql -X -A -t -v ON_ERROR_STOP=1 \
@@ -41,8 +41,8 @@ run_tenant() {
 }
 test "$(run_tenant "$token_a" tenant-a-password 'SELECT secret FROM proxima_cli_e2e.records')" = "A-secret"
 test "$(run_tenant "$token_b" tenant-b-password 'SELECT secret FROM proxima_cli_e2e.records')" = "B-secret"
-test "$(run_tenant "$token_a" tenant-a-password "SELECT count(*) FROM proxima_cli_e2e.records WHERE tenant_id='tenant_b'")" = "0"
-if run_tenant "$token_a" tenant-a-password "INSERT INTO proxima_cli_e2e.records VALUES ('tenant_b','forbidden')" >/dev/null 2>&1; then
+test "$(run_tenant "$token_a" tenant-a-password "SELECT count(*) FROM proxima_cli_e2e.records WHERE tenant_id='cli_b'")" = "0"
+if run_tenant "$token_a" tenant-a-password "INSERT INTO proxima_cli_e2e.records VALUES ('cli_b','forbidden')" >/dev/null 2>&1; then
   echo "FAIL: cross-tenant insert unexpectedly succeeded" >&2; exit 1
 fi
 if run_tenant "invalid-token" tenant-a-password 'SELECT 1' >/dev/null 2>&1; then

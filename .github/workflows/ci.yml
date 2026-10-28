@@ -38,7 +38,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
       - name: Cache Rust build
         uses: Swatinem/rust-cache@v2
-      - name: Test public Engine CLI
+      - name: Install public Engine CLI\n        run: python3 -m pip install --user --break-system-packages -e .\n      - name: Verify installed CLI entry point\n        run: python3 -c 'import agata; assert agata.main(["--help"]) == 0'\n      - name: Test public Engine CLI
         run: python3 -m unittest discover -s tests_cli -v
       - name: Run engine tests
         run: cargo test -p proxima-engine

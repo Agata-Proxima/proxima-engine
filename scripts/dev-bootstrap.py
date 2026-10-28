@@ -80,7 +80,8 @@ def token(args: argparse.Namespace) -> None:
         raise SystemExit("Tenant ID must be 1–128 ASCII letters, digits, underscores, or hyphens.")
     if not 1 <= args.ttl <= 86400:
         raise SystemExit("TTL must be between 1 and 86400 seconds for local development.")
-    secret = bytes.fromhex(config["tenant_signing_key"])
+    # The Engine reads PROXIMA_TENANT_SIGNING_KEY as UTF-8 bytes, not hex-decoded bytes.
+    secret = config["tenant_signing_key"].encode("utf-8")
     expires = int(time.time()) + args.ttl
     payload = f"v1.{tenant}.{expires}"
     signature = hmac.new(secret, payload.encode("utf-8"), hashlib.sha256).hexdigest()

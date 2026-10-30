@@ -10,6 +10,9 @@
   <a href="https://github.com/Agata-Proxima/proxima-engine/actions/workflows/ci.yml"><img alt="CI status" src="https://github.com/Agata-Proxima/proxima-engine/actions/workflows/ci.yml/badge.svg?branch=main"></a>
   <a href="LICENSE"><img alt="MIT license for covered source" src="https://img.shields.io/badge/Engine%20source-MIT-16a34a.svg"></a>
   <a href="https://agataproxima.com"><img alt="Website" src="https://img.shields.io/badge/website-agataproxima.com-16a34a.svg"></a>
+  <a href="https://discord.gg/xsYSuDMzg"><img alt="Discord community — Join" src="https://img.shields.io/badge/Discord-join-5865F2?logo=discord&logoColor=white"></a>
+  <a href="https://x.com/Worldtwins25"><img alt="X (Twitter)" src="https://img.shields.io/badge/X-Worldtwins25-111111.svg"></a>
+  <a href="https://www.linkedin.com/company/agata-proxima/"><img alt="LinkedIn company page" src="https://img.shields.io/badge/LinkedIn-Agata%20Proxima-0A66C2.svg"></a>
   <img alt="Rust" src="https://img.shields.io/badge/Rust-stable-orange.svg">
   <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-wire%20protocol-336791.svg">
 </p>

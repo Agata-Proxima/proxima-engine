@@ -1,0 +1,91 @@
+﻿# PgBouncer Transaction Pooling and Tenant Isolation Evidence
+
+Date: 2026-11-01
+Environment: Local Docker Compose
+PgBouncer: 1.24.1
+PostgreSQL: 17
+Agata Proxima Engine: Local build
+
+## Architecture
+
+Application
+    -> Agata Proxima Engine
+    -> PgBouncer
+    -> PostgreSQL
+
+PgBouncer pool mode: transaction
+Default pool size: 2
+Maximum client connections: 128
+
+## Test Results
+
+### 1. Tenant token validation
+
+- tenant_a: PASS
+- tenant_b: PASS
+
+### 2. Tenant isolation
+
+Tenant A query:
+SELECT tenant_id, secret FROM tenant_demo.records;
+
+Result:
+tenant_a | A-secret
+
+Tenant B query:
+SELECT tenant_id, secret FROM tenant_demo.records;
+
+Result:
+tenant_b | B-secret
+
+### 3. Cross-tenant read
+
+Tenant A queried:
+
+SELECT count(*) FROM tenant_demo.records
+WHERE tenant_id = 'tenant_b';
+
+Result: 0
+
+### 4. Cross-tenant write
+
+The earlier RLS test rejected Tenant A's attempt to insert a Tenant B record.
+
+Result: REJECTED BY ROW-LEVEL SECURITY
+
+### 5. Backend connection reuse
+
+Five sequential client connections were opened for each tenant.
+
+Tenant A:
+proxima_tenant_tenant_a | backend_pid=9932
+proxima_tenant_tenant_a | backend_pid=9932
+proxima_tenant_tenant_a | backend_pid=9932
+proxima_tenant_tenant_a | backend_pid=9932
+proxima_tenant_tenant_a | backend_pid=9932
+
+Tenant B:
+proxima_tenant_tenant_b | backend_pid=9963
+proxima_tenant_tenant_b | backend_pid=9963
+proxima_tenant_tenant_b | backend_pid=9963
+proxima_tenant_tenant_b | backend_pid=9963
+proxima_tenant_tenant_b | backend_pid=9963
+
+Result:
+- Backend connections were reused.
+- Each tenant used a distinct PostgreSQL role.
+- The observed backend PIDs were separate between tenants.
+
+## PgBouncer log observations
+
+- PgBouncer started successfully.
+- Listening on 0.0.0.0:6432.
+- Tenant-specific client connections were accepted.
+- Separate PostgreSQL server connections were established for both tenant roles.
+- Transaction activity was recorded.
+
+## Conclusion
+
+The local integration test verified that Agata Proxima Engine can route tenant-authenticated PostgreSQL connections through PgBouncer transaction pooling while preserving PostgreSQL role separation and row-level security.
+
+These results document the tested configuration and observations. They are not a substitute for a concurrent production-load benchmark.

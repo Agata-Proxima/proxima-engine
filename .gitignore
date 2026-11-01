@@ -1,1 +1,4 @@
 .proxima-dev/
+.env
+pgbouncer-userlist.txt
+pgbouncer-userlist.txt

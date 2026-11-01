@@ -57,3 +57,15 @@ Capture actual outputs, Engine commit SHA, date, PostgreSQL version, and non-sen
 **Security boundary:** the Engine validates signed tenant context and maps it to a PostgreSQL role; PostgreSQL grants and RLS enforce row-level isolation. This open-source walkthrough does not claim hosted verification or audit records were generated. It does not replace application authorization, TLS, secure token issuance, restricted direct database access, or connection-pool testing.
 
 See [Security](SECURITY.md) for production limitations.
+
+## PgBouncer Transaction Pooling
+
+See [PgBouncer Transaction Pooling Evidence](../evidence/pgbouncer-transaction-pooling.txt).
+
+The local Docker Compose integration test routes PostgreSQL traffic through:
+
+`Application -> Agata Proxima Engine -> PgBouncer -> PostgreSQL`
+
+Verified results include tenant-specific reads, cross-tenant read isolation, an earlier RLS write rejection, and backend connection reuse across five sequential client connections per tenant.
+
+The test uses separate PostgreSQL roles for each tenant. The observed backend process IDs were distinct between tenants and repeated across their respective connections.

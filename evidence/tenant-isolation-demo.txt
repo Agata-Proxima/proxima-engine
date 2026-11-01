@@ -1,0 +1,51 @@
+﻿# Agata Proxima — Tenant Isolation Demo
+
+Date: 2026-10-31
+Repository: Agata-Proxima/proxima-engine
+Tested commit: 3ba713f7f7dd07797dfa873570181a469d19f9b0
+Environment: Docker Compose, PostgreSQL 17, Agata Proxima Engine
+
+## Results
+
+### 1. Tenant A authentication and data access
+PASS
+
+Tenant A authenticated through the Proxima Engine and received:
+
+    tenant_a | A-secret
+
+### 2. Cross-tenant read isolation
+PASS
+
+Tenant A queried for Tenant B records.
+
+    count = 0
+
+### 3. Cross-tenant write protection
+PASS
+
+Tenant A attempted to insert a Tenant B record.
+
+PostgreSQL rejected the operation:
+
+    ERROR: new row violates row-level security policy for table "records"
+
+### 4. Missing tenant token rejection
+PASS
+
+A connection without a tenant token was rejected by the Engine.
+
+### 5. Tenant B authentication and data access
+PASS
+
+Tenant B authenticated through the Proxima Engine and received:
+
+    tenant_b | B-secret
+
+## Outcome
+
+All five demonstration checks passed.
+
+The demonstration verified signed tenant-token authentication, tenant-to-database-role mapping, cross-tenant read isolation, and PostgreSQL Row-Level Security protection against unauthorized writes.
+
+Agata Proxima — PostgreSQL Security, Tenant Isolation & Access Verification.

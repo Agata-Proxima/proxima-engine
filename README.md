@@ -17,6 +17,8 @@
   <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-wire%20protocol-336791.svg">
 </p>
 
+**DEMO:** [Tenant isolation](docs/TENANT_ISOLATION.md) · [PgBouncer transaction pooling](evidence/pgbouncer-transaction-pooling.txt)
+
 **Start here:** [Try the tenant-isolation challenge](docs/TENANT_ISOLATION.md) · [Launch evaluation](docs/LAUNCH.md) · [Quickstart](docs/QUICKSTART.md) · [Local developer mode — no hosted account required](docs/LOCAL_DEVELOPMENT.md) · [Engine CLI](docs/CLI.md) · [Architecture](docs/ARCHITECTURE.md) · [Tenant isolation lab](docs/TENANT_ISOLATION.md) · [API & health](docs/API.md) · [Security](docs/SECURITY.md) · [Hosted platform](https://agataproxima.com)
 
 ## Challenge: can Tenant A read Tenant B's data?

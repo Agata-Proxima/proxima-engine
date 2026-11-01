@@ -88,4 +88,3 @@ Result:
 
 The local integration test verified that Agata Proxima Engine can route tenant-authenticated PostgreSQL connections through PgBouncer transaction pooling while preserving PostgreSQL role separation and row-level security.
 
-These results document the tested configuration and observations. They are not a substitute for a concurrent production-load benchmark.

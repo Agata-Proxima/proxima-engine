@@ -1,50 +1,67 @@
 <p align="center">
-  <img src="frontend/src/assets/agata-proxima-orbit.svg" alt="Agata Proxima orbit logo" width="132">
+  <img src="frontend/src/assets/agata-proxima-orbit.svg" alt="Agata Proxima orbit logo" width="112">
 </p>
 
 <h1 align="center">Agata Proxima</h1>
 <p align="center"><strong>Security infrastructure for multi-tenant PostgreSQL applications.</strong></p>
-<p align="center">The hosted control plane coordinates your organization and registered nodes. Proxima Engine is the open-source data plane that sits between your application and PostgreSQL.</p>
+<p align="center">Proxima Engine is a Rust PostgreSQL-protocol gateway that verifies signed tenant context and routes each database session to its tenant-specific PostgreSQL role.</p>
 
 <p align="center">
-  <a href="https://github.com/Agata-Proxima/proxima-engine/actions/workflows/ci.yml"><img alt="CI status" src="https://github.com/Agata-Proxima/proxima-engine/actions/workflows/ci.yml/badge.svg?branch=main"></a>
-  <a href="LICENSE"><img alt="MIT license for covered source" src="https://img.shields.io/badge/Engine%20source-MIT-16a34a.svg"></a>
-  <a href="https://agataproxima.com"><img alt="Website" src="https://img.shields.io/badge/website-agataproxima.com-16a34a.svg"></a>
-  <a href="https://discord.gg/xsYSuDMzg"><img alt="Discord community — Join" src="https://img.shields.io/badge/Discord-join-5865F2?logo=discord&logoColor=white"></a>
-  <a href="https://x.com/Worldtwins25"><img alt="X (Twitter)" src="https://img.shields.io/badge/X-Worldtwins25-111111.svg"></a>
-  <a href="https://www.linkedin.com/company/agata-proxima/"><img alt="LinkedIn company page" src="https://img.shields.io/badge/LinkedIn-Agata%20Proxima-0A66C2.svg"></a>
-  <img alt="Rust" src="https://img.shields.io/badge/Rust-stable-orange.svg">
-  <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-wire%20protocol-336791.svg">
+  <a href="https://github.com/Agata-Proxima/proxima-engine/actions/workflows/ci.yml">Continuous integration</a> ·
+  <a href="LICENSE">MIT license for covered Engine source</a> ·
+  <a href="https://agataproxima.com">Website</a> ·
+  <a href="https://discord.gg/xsYSuDMzg">Discord</a> ·
+  <a href="https://x.com/Worldtwins25">X</a> ·
+  <a href="https://www.linkedin.com/company/agata-proxima/">LinkedIn</a>
 </p>
 
-**Start here:** [What is Agata Proxima?](#what-is-agata-proxima) · [Launch evaluation](docs/LAUNCH.md) · [Quickstart](docs/QUICKSTART.md) · [Local developer mode — no hosted account required](docs/LOCAL_DEVELOPMENT.md) · [Engine CLI](docs/CLI.md) · [Architecture](docs/ARCHITECTURE.md) · [Tenant isolation tutorial](docs/TENANT_ISOLATION.md) · [API & health](docs/API.md) · [Security](docs/SECURITY.md) · [Hosted platform](https://agataproxima.com)
+**Start:** [What is Agata Proxima?](#what-is-agata-proxima) · [Launch evaluation](docs/LAUNCH.md) · [Quickstart](docs/QUICKSTART.md) · [Local developer mode](docs/LOCAL_DEVELOPMENT.md) · [Engine CLI](docs/CLI.md) · [Documentation index](docs/README.md)
 
-**Explore:** [Run the Engine](docs/QUICKSTART.md) · [Verify isolation](docs/TENANT_ISOLATION.md) · [Star or follow the public Engine](https://github.com/Agata-Proxima/proxima-engine) · [Explore hosted Cloud](https://agataproxima.com)
+**Technical guides:** [Architecture](docs/ARCHITECTURE.md) · [Tenant isolation](docs/TENANT_ISOLATION.md) · [Driver integrations](docs/INTEGRATIONS.md) · [API and metrics](docs/API.md) · [Security](docs/SECURITY.md) · [Deployment](docs/DEPLOYMENT.md) · [Verification](docs/VERIFICATION.md)
+
+---
 
 ## What is Agata Proxima?
 
-Agata Proxima is designed to make tenant boundaries easier to operate and verify in applications that use PostgreSQL. It has two deliberately separate parts:
+Agata Proxima provides security infrastructure for applications that serve multiple customers from a shared PostgreSQL environment. Its core job is to make tenant identity part of the database connection boundary and route each verified tenant session to a dedicated PostgreSQL role.
 
-- **Proxima Engine — open source:** a Rust PostgreSQL-protocol proxy. It validates signed tenant context when enabled, maps verified tenant IDs to database roles, relays database sessions, and exposes local health/status/Prometheus metrics.
-- **Agata Proxima Cloud — hosted, separate product:** the private management experience for authorized organizations and registered Engine nodes. Account, organization, team, plan, billing, and hosted management workflows are not implemented by this repository and are not licensed by the Engine repository's MIT license.
+The product has two cooperating components:
 
-The Engine is not a replacement for PostgreSQL, your application authorization, or database Row-Level Security (RLS). PostgreSQL grants and RLS policies remain essential. Read the [security model](docs/SECURITY.md) before using sensitive workloads.
+### Proxima Engine — public, open-source data plane
 
-## See the request path
+Proxima Engine is a Rust service that sits between an application's existing PostgreSQL driver and PostgreSQL. It speaks the PostgreSQL wire protocol, so applications keep their existing database drivers and connect to the Engine endpoint.
+
+The Engine provides:
+
+- **Signed tenant-context verification.** Validates tenant tokens using HMAC-SHA256, including token format, tenant identifier, expiry, and signature. Missing or invalid context is rejected when tenant enforcement is enabled.
+- **Tenant-to-role routing.** Maps the verified tenant identity to a configured PostgreSQL role and establishes a tenant-bound upstream database session.
+- **PostgreSQL-native enforcement.** Works with database roles, grants, and Row-Level Security (RLS), keeping data authorization inside PostgreSQL.
+- **Protocol and connection controls.** Handles PostgreSQL startup and authentication negotiation, connection limits, upstream timeouts, and configurable client/upstream TLS.
+- **Security operations.** Includes a peer-scoped violation breaker, short-lived break-glass tokens with replay protection, and a local signed attestation ledger.
+- **Operational visibility.** Exposes local health and status routes plus Prometheus metrics.
+- **Developer tooling.** Includes a Python standard-library CLI, local identity bootstrap, tenant-token generation, integration examples, and repeatable PostgreSQL tests.
+
+### Agata Proxima Cloud — hosted management product
+
+Agata Proxima Cloud is the separate hosted control plane for organization workflows, teams, plans, billing, registered nodes, and hosted management. It coordinates authorized Engine nodes while database traffic remains in the customer environment.
+
+The Cloud application and its private source are separate from this public Engine repository. The MIT license in this repository applies to the material covered by its license; it does not grant access to the hosted application's source code or hosted account features.
+
+## How the request path works
 
 ```mermaid
 flowchart LR
-    U["Your application<br/>existing PostgreSQL driver"] --> E["Proxima Engine<br/>Rust data plane"]
-    E -->|verified tenant context| R["Tenant database role"]
-    R --> P[("PostgreSQL<br/>grants + RLS")]
-    E --> H["Local health / status"]
-    E --> M["Prometheus metrics"]
-    C["Agata Proxima Cloud<br/>private hosted control plane"] -.->|"Authorized node enrollment / management"| E
+  App["Application + existing PostgreSQL driver"] -->|"PostgreSQL protocol + signed tenant context"| Engine["Proxima Engine · Rust"]
+  Engine -->|"Verified tenant → dedicated DB role"| Role["Tenant PostgreSQL role"]
+  Role --> PG[("PostgreSQL · grants + RLS")]
+  Engine --> Health["Health / status"]
+  Engine --> Metrics["Prometheus metrics"]
+  Cloud["Agata Proxima Cloud · hosted control plane"] -.->|"Authorized enrollment and management"| Engine
 ```
 
-The dotted line represents the control-plane boundary. This public repository documents the Engine-side contract; it does not expose private Cloud source code or promise that every hosted feature is available in a self-managed installation.
+The Engine is designed to work with PostgreSQL, not replace it. The Engine verifies tenant context and selects the database role; PostgreSQL privileges and RLS policies enforce which rows that role can read or modify. Application authentication and tenant authorization remain in the trusted application backend that issues signed tenant tokens.
 
-## Run it locally
+## Get started
 
 Requirements: Git and Docker with Compose.
 
@@ -54,108 +71,78 @@ cd proxima-engine
 docker compose -f compose.dev.yaml up --build -d
 ```
 
-Check the local health and status routes:
+Check the local listeners:
 
 ```bash
 curl -fsS http://127.0.0.1:9090/healthz
 curl -fsS http://127.0.0.1:9080/api/status
 ```
 
-Windows PowerShell equivalent:
+Windows PowerShell:
 
 ```powershell
 Invoke-RestMethod http://127.0.0.1:9090/healthz
 Invoke-RestMethod http://127.0.0.1:9080/api/status
 ```
 
-Then run the [full Quickstart](docs/QUICKSTART.md), which performs a real SQL query through the proxy. The Compose profile is a disposable local demo; its example credentials are not for production. The initial connectivity demo does **not** by itself prove tenant isolation.
+Then follow the [Quickstart](docs/QUICKSTART.md) to create a table, send a real SQL query through the Engine, inspect metrics, and stop the local stack. The Compose profile uses disposable local credentials and synthetic data.
 
-## A practical path from demo to integration
+## Verify tenant isolation
 
-<details>
-<summary><strong>1 — Start the Engine</strong></summary>
+The repository includes a runnable two-tenant PostgreSQL integration test and a documented PgBouncer transaction-pooling evidence record.
 
-Follow [Quickstart](docs/QUICKSTART.md). It starts the Engine and PostgreSQL locally, checks health, inspects status, and sends a query through the proxy.
-</details>
+The verification path covers:
 
-<details>
-<summary><strong>2 — Understand the trust boundary</strong></summary>
+1. Tenant A authenticates and reads only Tenant A's row.
+2. Tenant B authenticates and reads only Tenant B's row.
+3. Cross-tenant reads return zero visible rows.
+4. Cross-tenant writes are rejected by PostgreSQL RLS.
+5. Missing or invalid signed tenant context is rejected when enforcement is enabled.
+6. PgBouncer transaction-pooling evidence records backend reuse within each tenant role and separate backend identities between the two tenant roles.
 
-Read [Architecture](docs/ARCHITECTURE.md) and [Security](docs/SECURITY.md). Decide which process is trusted to authorize a user for a tenant and mint a short-lived signed tenant token. Never put the signing key in a browser or mobile application.
-</details>
-
-<details>
-<summary><strong>3 — Prove tenant separation</strong></summary>
-
-Run [Tenant isolation tutorial](docs/TENANT_ISOLATION.md). It creates two non-superuser roles, applies PostgreSQL RLS, and demonstrates both allowed and denied access. Do not skip negative tests.
-</details>
-
-<details>
-<summary><strong>4 — Connect your application</strong></summary>
-
-Keep your existing PostgreSQL driver and change its endpoint to the Engine. Copy a server-side example from [Node.js, Python, or Rust integration recipes](docs/INTEGRATIONS.md). Production connections must use correctly verified TLS.
-</details>
-
-<details>
-<summary><strong>5 — Operate and verify</strong></summary>
-
-Use [API, health, and metrics](docs/API.md), [Operations](docs/OPERATIONS.md), and [Verification & CLI](docs/VERIFICATION.md). A healthy HTTP endpoint is not a substitute for a database query, RLS tests, or review of your production configuration.
-</details>
+See [Tenant isolation](docs/TENANT_ISOLATION.md), [Verification](docs/VERIFICATION.md), and the [PgBouncer transaction-pooling evidence](evidence/pgbouncer-transaction-pooling.txt). The evidence describes the exact test performed and its observed results.
 
 ## Documentation
 
-| Guide | What it answers |
+| Guide | Purpose |
 |---|---|
-| [Quickstart](docs/QUICKSTART.md) | Run a local stack and execute a real SQL query |
-| [Engine CLI](docs/CLI.md) | Local init, token minting, token verification, and health checks |
-| [Local developer mode](docs/LOCAL_DEVELOPMENT.md) | Generate local node identity and short-lived test tenant tokens without Cloud or billing |
-| [Architecture](docs/ARCHITECTURE.md) | Components, request lifecycle, trust boundaries |
-| [Configuration](docs/CONFIGURATION.md) | Environment variables, defaults, and security-sensitive settings |
-| [Tenant isolation](docs/TENANT_ISOLATION.md) | Signed tenant context, PostgreSQL roles, RLS, negative tests |
-| [Integrations](docs/INTEGRATIONS.md) | psql, Node.js, Python, and Rust driver examples |
-| [API reference](docs/API.md) | Implemented HTTP routes, PostgreSQL endpoint, metrics |
-| [Node enrollment](docs/NODE_ENROLLMENT.md) | Engine-side enrollment and persistent node identity |
-| [Deployment](docs/DEPLOYMENT.md) | Container deployment and production hardening |
-| [Operations](docs/OPERATIONS.md) | Troubleshooting, health checks, logs, recovery |
-| [Verification & CLI](docs/VERIFICATION.md) | Tests, attestation verification, break-glass tooling |
-| [Security model](docs/SECURITY.md) | Implemented controls, limitations, deployment checklist |
-| [Cloud control plane](docs/CLOUD_CONTROL_PLANE.md) | What stays hosted/private and how the parts relate |
-| [Plans and billing](docs/BILLING.md) | Hosted plans, usage concepts, upgrade path, billing boundaries |
-| [Support](docs/SUPPORT.md) | Where to ask questions and report security issues |
-| [Contributing](CONTRIBUTING.md) | Local development and pull-request expectations |
-| [Code of Conduct](CODE_OF_CONDUCT.md) | Community standards |
-| [Copyright & brand](COPYRIGHT.md) | Source license versus protected brand assets |
-| [Open-source scope and responsibility](docs/OPEN_SOURCE_SCOPE.md) | Self-managed use, warranty disclaimer, responsibility, and support boundaries |
-| [Security policy](SECURITY.md) | Private vulnerability reporting guidance |
+| [Quickstart](docs/QUICKSTART.md) | Start the local stack and query PostgreSQL through the Engine |
+| [Local developer mode](docs/LOCAL_DEVELOPMENT.md) | Generate local node identity and signed tenant test tokens |
+| [Engine CLI](docs/CLI.md) | Bootstrap, token generation, diagnostics, and local status commands |
+| [Architecture](docs/ARCHITECTURE.md) | Request lifecycle, tenant context, source map, and control-plane boundary |
+| [Configuration](docs/CONFIGURATION.md) | Environment variables, defaults, and validation |
+| [Tenant isolation](docs/TENANT_ISOLATION.md) | PostgreSQL roles, RLS policies, signed context, and test results |
+| [Driver integrations](docs/INTEGRATIONS.md) | psql, Node.js, Python, and Rust connection examples |
+| [API reference](docs/API.md) | PostgreSQL endpoint, health/status routes, and Prometheus metrics |
+| [Node enrollment](docs/NODE_ENROLLMENT.md) | Engine-side node identity and enrollment contract |
+| [Deployment](docs/DEPLOYMENT.md) | Container build, TLS, networking, persistence, and deployment configuration |
+| [Operations](docs/OPERATIONS.md) | Health checks, logs, monitoring, recovery, and troubleshooting |
+| [Verification](docs/VERIFICATION.md) | Rust tests, PostgreSQL integration tests, CI, and evidence verification |
+| [Security model](docs/SECURITY.md) | Implemented controls and the configuration required to operate them |
+| [Developer security walkthrough](docs/DEVELOPER_SECURITY_DEMO.md) | Reproduce positive and negative tenant-access scenarios |
+| [Cloud control plane](docs/CLOUD_CONTROL_PLANE.md) | Hosted product and self-managed Engine responsibilities |
+| [Plans and billing](docs/BILLING.md) | Hosted plan and checkout information |
+| [Support](docs/SUPPORT.md) | Technical support, issue reporting, and contact routes |
+| [Contributing](CONTRIBUTING.md) | Development setup and pull-request process |
+| [Security policy](SECURITY.md) | Private vulnerability reporting |
+| [Code of Conduct](CODE_OF_CONDUCT.md) | Community participation standards |
+| [Copyright and brand](COPYRIGHT.md) | Source-license and brand-asset boundaries |
+| [Open-source scope](docs/OPEN_SOURCE_SCOPE.md) | MIT-licensed source, self-managed use, and support boundaries |
 
-## Hosted Cloud, plans, and support
+## Hosted product and contact
 
 - **Website and hosted account:** [agataproxima.com](https://agataproxima.com)
-- **Plans and billing:** review plans, usage limits, invoices, and upgrades through the hosted account workflow. See [Plans and billing](docs/BILLING.md).
+- **Plans and billing:** [Hosted plan information](docs/BILLING.md)
 - **Support:** [support@agataproxima.com](mailto:support@agataproxima.com)
-- **Security vulnerabilities:** report them privately as described in [SECURITY.md](SECURITY.md).
+- **Security reports:** follow the private process in [SECURITY.md](SECURITY.md)
+- **Community:** [Discord](https://discord.gg/xsYSuDMzg)
 
-```mermaid
-flowchart TD
-  Dev[Developer] --> Docs[Public Engine documentation]
-  Docs --> Engine[Open-source Proxima Engine]
-  Customer[Customer organization] --> Cloud[Agata Proxima hosted control plane]
-  Cloud -->|authorized node enrollment| Engine
-  App[Application / PostgreSQL driver] --> Engine
-  Engine --> DB[(PostgreSQL)]
-  Cloud -.->|"Account, team, plans and billing"| Customer
-```
+## Open-source scope
 
-The hosted account, organization, team, node-registration, and billing workflows belong to the separate private application. This repository explains the integration boundary without exposing private dashboard source code or endpoints.
-
-## Open-source scope and brand
-
-The Engine source and documentation in this repository are distributed under the [MIT License](LICENSE), subject to the license text. See [Open-source scope and responsibility](docs/OPEN_SOURCE_SCOPE.md) for a plain-language explanation of self-managed deployments, support boundaries, and the license's warranty disclaimer. The separate hosted service and its private source code are not included. **The Agata Proxima name, orbit logo, and other brand artwork are reserved brand assets and are not granted for reuse by the Engine source license.** See [COPYRIGHT.md](COPYRIGHT.md) for the scope and limitations of these statements. A source-code license cannot promise that every form of copying is technically preventable; trademark and copyright enforcement depend on applicable law.
+The Proxima Engine source and covered documentation are distributed under the [MIT License](LICENSE). The hosted Cloud application, hosted account workflows, and private management source are separate products and are not included in this repository's license. The Agata Proxima name, orbit logo, and designated brand artwork are reserved brand assets; see [Copyright and brand](COPYRIGHT.md).
 
 ## Contribute
 
-Bug reports and feature requests: [GitHub Issues](https://github.com/Agata-Proxima/proxima-engine/issues). Before filing, review [Operations](docs/OPERATIONS.md) and redact secrets, tenant data, and private logs. Please read [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md).
-
----
+Use [GitHub Issues](https://github.com/Agata-Proxima/proxima-engine/issues) for reproducible Engine bugs and feature requests. Read [Contributing](CONTRIBUTING.md) before submitting a pull request. For vulnerabilities, use the private reporting process in [SECURITY.md](SECURITY.md).
 
 <p align="center">Built by Agata Proxima · <a href="https://agataproxima.com">agataproxima.com</a> · <a href="https://github.com/Agata-Proxima">GitHub organization</a></p>

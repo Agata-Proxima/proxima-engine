@@ -1,19 +1,19 @@
-# API, health, metrics, and integration reference
+# Proxima Engine API, health, and metrics
 
-Proxima Engine is a PostgreSQL wire-protocol proxy with a small local HTTP status surface. It is **not** a general-purpose REST API server. This document lists the HTTP routes implemented in this repository.
+Proxima Engine is a PostgreSQL wire-protocol proxy with a local HTTP status and observability surface. Applications send SQL through the PostgreSQL endpoint; operators use the HTTP routes for health, status, and Prometheus metrics.
 
-## Local HTTP surfaces
+## Local HTTP routes
 
-| Listener | Default | Routes | Purpose |
-| --- | --- | --- | --- |
-| Embedded status page | `127.0.0.1:9080` | `GET /` | Engine status page with the Agata Proxima logo |
-| Embedded status page | `127.0.0.1:9080` | `GET /logo.svg` | Project logo asset |
+| Listener | Default address | Route | Response |
+|---|---|---|---|
+| Embedded status page | `127.0.0.1:9080` | `GET /` | Engine status page |
+| Embedded status page | `127.0.0.1:9080` | `GET /logo.svg` | Agata Proxima logo |
 | Embedded status page | `127.0.0.1:9080` | `GET /health` | Plain-text `ok` |
-| Embedded status page | `127.0.0.1:9080` | `GET /api/status` | JSON status/configuration summary |
+| Embedded status page | `127.0.0.1:9080` | `GET /api/status` | JSON runtime/configuration summary |
 | Metrics listener | `127.0.0.1:9090` | `GET /metrics` | Prometheus exposition |
 | Metrics listener | `127.0.0.1:9090` | `GET /health`, `GET /healthz` | Plain-text `ok` |
 
-The defaults are bound to loopback. The embedded status server does not implement user authentication or authorization. Keep it private; do not publish it to the internet. The status JSON includes listener/upstream addresses and whether tenant enforcement and TLS are configured.
+The default listeners bind to loopback. The embedded status server has no built-in user authentication; keep it on loopback or behind a separately authenticated private access layer. The status JSON includes listener/upstream addresses and whether tenant enforcement and TLS are configured.
 
 ## Verify a running Engine
 
@@ -24,21 +24,21 @@ curl -i http://127.0.0.1:9080/api/status
 curl -i http://127.0.0.1:9090/metrics
 ```
 
-A healthy route returns HTTP 200 with body `ok`. An unknown route returns HTTP 404. A successful health response means the listener is responding; it does not prove that the upstream database is reachable or that tenant isolation is correctly configured. Verify an actual database query separately.
+Health routes return HTTP 200 with body `ok`. Unknown routes return HTTP 404. Follow a health check with a SQL query through port 6432 to verify the PostgreSQL protocol path.
 
 ## PostgreSQL endpoint
 
-Applications connect using their existing PostgreSQL driver to the Engine listener, normally port 6432. The Engine opens an upstream connection to `PROXIMA_UPSTREAM_ADDR`.
+Applications use their existing PostgreSQL driver to connect to the Engine listener, normally port 6432. The Engine connects upstream to `PROXIMA_UPSTREAM_ADDR`.
 
 ```bash
 psql "host=127.0.0.1 port=6432 dbname=appdb user=proxima password=YOUR_DATABASE_PASSWORD sslmode=disable"
 ```
 
-Use `sslmode=disable` only in the loopback development quickstart. For production, configure TLS and verify certificates according to [Deployment](DEPLOYMENT.md).
+Use `sslmode=disable` only for the loopback development quickstart. For deployed connections, configure TLS and verify certificates as described in [Deployment](DEPLOYMENT.md).
 
 ## Prometheus metrics
 
-The metrics listener serves Prometheus text format. Useful series include:
+The metrics listener serves Prometheus text format. Available series include:
 
 - `proxima_engine_active_connections`
 - `proxima_engine_connections_accepted_total`
@@ -55,42 +55,32 @@ The metrics listener serves Prometheus text format. Useful series include:
 - `proxima_engine_query_roundtrip_latency_seconds_bucket`
 - `proxima_engine_query_roundtrip_latency_seconds_count`
 
-The counters and histogram are in-memory and reset when the process restarts. Scrape them on a private monitoring network. They are operational telemetry, not a durable audit log.
+Counters and histograms are process-local and reset when the Engine restarts. Scrape them from a private monitoring network; use the attestation ledger for configured signed evidence.
 
 ## Node enrollment contract
 
-When enrollment variables are supplied, the Engine calls `POST /api/v1/nodes/enroll` on the configured control-plane URL with JSON fields `node_id` and `enrollment_token`. It validates the returned identity and persists it locally.
+When enrollment variables are configured, the Engine sends an outbound `POST /api/v1/nodes/enroll` request to the configured control-plane URL with JSON fields `node_id` and `enrollment_token`. It validates the returned identity and persists it locally.
 
-This is an **outbound request made by the Engine**, not an HTTP route served by this Engine repository. Node registration and one-time token issuance require a compatible control plane. The public Engine does not expose `POST /api/v1/nodes`, tenant-management routes, hosted API-key management, or webhook-management routes. See [Node enrollment](NODE_ENROLLMENT.md).
+This is an outbound enrollment request, not a route served by the public Engine. Hosted node registration and one-time token issuance are handled by a compatible control plane. See [Node enrollment](NODE_ENROLLMENT.md).
 
 ## Tenant context
 
-When `PROXIMA_TENANT_SIGNING_KEY` is configured, the Engine requires a valid signed tenant token during PostgreSQL startup. libpq-compatible clients can pass it in the startup `options` value:
+When `PROXIMA_TENANT_SIGNING_KEY` is configured, the Engine requires a valid signed tenant token during PostgreSQL startup. libpq-compatible clients pass it in the startup `options` value:
 
 ```text
 -c proxima_tenant_token=<signed-token>
 ```
 
-The Engine removes this private option before forwarding startup to PostgreSQL, then rewrites the upstream username to `<PROXIMA_TENANT_ROLE_PREFIX><tenant_id>` (hyphens in the tenant ID become underscores). PostgreSQL role grants and RLS policies remain essential. Follow [Tenant isolation](TENANT_ISOLATION.md) for runnable SQL and token generation.
+The Engine removes this private option before forwarding startup to PostgreSQL, then rewrites the upstream username to `<PROXIMA_TENANT_ROLE_PREFIX><tenant_id>` (hyphens in the tenant ID become underscores). PostgreSQL grants and RLS policies enforce the role's data access. Follow [Tenant isolation](TENANT_ISOLATION.md) for runnable SQL and test results.
 
-## HTTP status meanings
+## Select the correct interface
 
-| Status | Meaning |
-| --- | --- |
-| `200` | Health, status, logo, dashboard, or metrics response was served |
-| `404` | The requested path is not implemented on that listener |
-| No response / connection refused | Listener is disabled, not bound to that interface, process is down, or a network rule blocks access |
+- **PostgreSQL endpoint:** application SQL and database sessions.
+- **Health routes:** process-level HTTP health.
+- **Status page and `/api/status`:** private runtime diagnostics.
+- **`/metrics`:** Prometheus telemetry for trusted monitoring.
+- **Agata Proxima Cloud:** hosted accounts, organizations, teams, plans, billing, and hosted node management.
 
-The status and metrics listeners do not provide an administrative REST API. Do not invent hosted API endpoints from these local routes.
+The Engine's local HTTP surface is intentionally focused on status and observability. Hosted account and management workflows belong to the separate Cloud product. See [Cloud control-plane boundary](CLOUD_CONTROL_PLANE.md).
 
-
-## Choosing the right interface
-
-Use the PostgreSQL wire-protocol endpoint for application SQL, HTTP health for basic process monitoring, the status page for private diagnostics, and Prometheus metrics for trusted monitoring. These interfaces have different trust assumptions.
-
-- `/healthz` confirms the HTTP health handler responds; it does not prove a SQL query succeeds.
-- `/api/status` and the status page may expose operational configuration details. Keep them private.
-- `/metrics` should be reachable only by trusted monitoring infrastructure.
-- Account creation, organizations, billing, and hosted node management are Cloud workflows, not Engine HTTP routes in this repository.
-
-For a route failure, verify that the listener is enabled, bound to the expected interface, reachable from the caller's network, and allowed by firewall rules. Check sanitized logs before changing settings. See [Operations](OPERATIONS.md), [Configuration](CONFIGURATION.md), and [Cloud boundary](CLOUD_CONTROL_PLANE.md).
+For route failures, verify the listener, bind address, caller network, and firewall policy. See [Operations](OPERATIONS.md) and [Configuration](CONFIGURATION.md).

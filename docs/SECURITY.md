@@ -50,6 +50,6 @@ The Engine keeps each accepted client connection bound to its own upstream sessi
 
 ## Report a vulnerability
 
-Do not publish exploitable vulnerabilities, credentials, tenant data, or sensitive logs in public issues. Use the maintainer contact route published through the [Agata Proxima GitHub organization](https://github.com/Agata-Proxima) to request private disclosure instructions. Include the affected commit, impact, safe reproduction steps, and a proposed mitigation when available. Do not include live secrets or customer data.
+Email **[support@agataproxima.com](mailto:support@agataproxima.com)** with the subject **Private Security Report — Proxima Engine**. Do not publish exploitable details in public issues or pull requests. Include the affected commit, impact, and safe reproduction steps; do not attach live credentials, signing keys, customer records, or unredacted tenant data.
 
 See the repository [Security Policy](../SECURITY.md) for the reporting process.

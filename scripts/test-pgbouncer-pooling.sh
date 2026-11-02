@@ -1,17 +1,19 @@
 #!/usr/bin/env bash
 # Disposable local Compose test for tenant role separation through PgBouncer.
-# Never run this destructive test against production infrastructure.
+# Use synthetic data only. The test uses an isolated Compose project and volume.
 set -euo pipefail
 
-COMPOSE=(docker compose -f compose.dev.yaml)
+COMPOSE=(docker compose -p proxima-pgbouncer-test -f compose.dev.yaml)
 cleanup() {
   "${COMPOSE[@]}" down -v >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
 
-# Start from a clean disposable database and generate a local tenant-signing key.
+# Start from an isolated disposable database and generate a local signing key.
 "${COMPOSE[@]}" down -v >/dev/null 2>&1 || true
-python3 scripts/agata.py init
+if [[ ! -f .proxima-dev/dev-config.json ]]; then
+  python3 scripts/agata.py init
+fi
 export PROXIMA_TENANT_SIGNING_KEY
 PROXIMA_TENANT_SIGNING_KEY="$(python3 -c 'import json; print(json.load(open(".proxima-dev/dev-config.json"))["tenant_signing_key"])')"
 

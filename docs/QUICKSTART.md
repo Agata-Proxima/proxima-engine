@@ -1,15 +1,15 @@
-# Quickstart: run Proxima and query PostgreSQL
+# Quickstart: run Proxima Engine and query PostgreSQL
 
-This walkthrough starts a real PostgreSQL database and the Engine, sends a SQL query through the Engine, and checks health and metrics. You do not need a hosted account or a pre-existing database.
+Start a local PostgreSQL database and Proxima Engine, send a SQL query through the PostgreSQL wire-protocol proxy, and inspect health and Prometheus metrics. This local path requires no hosted account and no pre-existing database.
 
 ## Requirements
 
 - Git
-- Docker Desktop (Windows/macOS) or Docker Engine + Docker Compose (Linux)
+- Docker Desktop (Windows/macOS) or Docker Engine and Docker Compose (Linux)
 - For the optional native build: stable Rust and Cargo
-- For host-side examples: `curl` and `psql`; the Compose walkthrough runs `psql` inside the database container
+- For host-side examples: curl and psql; the Compose walkthrough runs psql inside the database container
 
-## 1. Start the stack
+## 1. Clone and start the stack
 
 ```bash
 git clone https://github.com/Agata-Proxima/proxima-engine.git
@@ -17,17 +17,18 @@ cd proxima-engine
 docker compose -f compose.dev.yaml up --build -d
 ```
 
-PowerShell users can run the same Docker command. If you want to edit local settings first, copy the example environment file with `Copy-Item .env.example .env` in PowerShell or `cp .env.example .env` in Bash.
+PowerShell users can run the same Docker command. To edit local settings first, copy the example environment file with `Copy-Item .env.example .env` in PowerShell or `cp .env.example .env` in Bash.
 
-This development profile starts:
+The development profile starts:
+
 - PostgreSQL on a private Compose network.
-- Proxima on port 6432, published to host loopback only.
+- Proxima Engine on port 6432, published to host loopback only.
 - The local status page on `127.0.0.1:9080`.
 - Health and Prometheus metrics on `127.0.0.1:9090`.
 
-The database password is `local-only-change-me`. It is for local development only and must never be reused outside this profile.
+The default database password is `local-only-change-me`. It is for this disposable local profile; use your own secret for any other environment.
 
-## 2. Confirm the Engine is up
+## 2. Confirm Engine health and status
 
 ```bash
 curl -fsS http://127.0.0.1:9090/healthz
@@ -35,35 +36,51 @@ curl -fsS http://127.0.0.1:9080/health
 curl -fsS http://127.0.0.1:9080/api/status
 ```
 
-The health routes return `ok`. The JSON status route reports whether tenant-token enforcement and TLS are configured, plus the listener/upstream settings and connection limit. Do not publish the dashboard or metrics listener to an untrusted network.
+The health routes return `ok`. The JSON status route reports the active listener/upstream settings and whether tenant-token enforcement and TLS are configured.
 
-In Windows PowerShell, use `Invoke-RestMethod http://127.0.0.1:9090/healthz`, `Invoke-RestMethod http://127.0.0.1:9080/health`, and `Invoke-RestMethod http://127.0.0.1:9080/api/status` instead of the Unix-style `curl -fsS` commands.
+Windows PowerShell:
 
-## 3. Create a table in PostgreSQL
+```powershell
+Invoke-RestMethod http://127.0.0.1:9090/healthz
+Invoke-RestMethod http://127.0.0.1:9080/health
+Invoke-RestMethod http://127.0.0.1:9080/api/status
+```
 
-This command connects directly to the local database to create test data:
+Keep the status page and metrics listener on loopback or a restricted private network.
+
+## 3. Create a PostgreSQL table
+
+This command connects directly to the local database to create synthetic quickstart data:
 
 ```bash
 docker compose -f compose.dev.yaml exec postgres psql -U proxima -d appdb -c "CREATE TABLE IF NOT EXISTS quickstart_messages (message text NOT NULL); TRUNCATE quickstart_messages; INSERT INTO quickstart_messages VALUES ('hello through Proxima');"
 ```
 
-## 4. Read that data through Proxima
+## 4. Query through Proxima Engine
 
-Now the client connects to the Engine, not directly to PostgreSQL:
+The client now connects to the Engine, which forwards the PostgreSQL protocol session to the database:
 
 ```bash
 docker compose -f compose.dev.yaml exec postgres psql "host=engine port=6432 dbname=appdb user=proxima password=local-only-change-me sslmode=disable" -c "SELECT * FROM quickstart_messages;"
 ```
 
-Expected result: one row containing `hello through Proxima`. You have verified a real PostgreSQL query through the proxy.
+Expected result: one row containing `hello through Proxima`.
 
-## 5. Inspect metrics
+This confirms the local container build, PostgreSQL connectivity, Engine listener, and end-to-end SQL forwarding.
+
+## 5. Inspect Prometheus metrics
 
 ```bash
 curl -fsS http://127.0.0.1:9090/metrics
 ```
 
-Look for names such as `proxima_engine_connections_accepted_total`, `proxima_engine_active_connections`, and `proxima_engine_processed_queries_total`. Metrics are process-local counters; restarting the Engine resets them.
+Look for metrics such as:
+
+- `proxima_engine_connections_accepted_total`
+- `proxima_engine_active_connections`
+- `proxima_engine_processed_queries_total`
+
+These process-local counters reset when the Engine restarts. Scrape them from a private monitoring network.
 
 ## 6. Stop the stack
 
@@ -71,17 +88,21 @@ Look for names such as `proxima_engine_connections_accepted_total`, `proxima_eng
 docker compose -f compose.dev.yaml down
 ```
 
-The named volumes remain so the local database can be reused. To permanently delete this disposable development data, use `docker compose -f compose.dev.yaml down -v`. Do not use `-v` if you need the data.
+Named volumes remain available for the next local run. To permanently delete the disposable development data:
 
-## What this quickstart proves — and what it does not
+```bash
+docker compose -f compose.dev.yaml down -v
+```
 
-It proves that the container builds, PostgreSQL starts, the Engine accepts a PostgreSQL connection, the query reaches the database, and the health/metrics listeners respond.
+## Next: verify tenant isolation
 
-The default Compose profile intentionally leaves tenant-token enforcement off so a first connection is simple. **It does not prove tenant isolation, TLS enforcement, production readiness, or compatibility with every driver.** Continue with [Tenant isolation](TENANT_ISOLATION.md), [Security](SECURITY.md), and [Deployment](DEPLOYMENT.md) before handling sensitive workloads.
+The quickstart demonstrates PostgreSQL connectivity through the Engine. The Compose profile starts with tenant-token enforcement disabled so the first SQL connection is straightforward.
+
+To verify tenant separation, continue with the [Tenant isolation guide](TENANT_ISOLATION.md). It creates two PostgreSQL roles, enables RLS, configures signed tenant context, and tests permitted and denied cross-tenant operations. For the complete verification path, see [Verification](VERIFICATION.md) and the [PgBouncer transaction-pooling evidence](../evidence/pgbouncer-transaction-pooling.txt).
 
 ## Run natively without Docker
 
-If PostgreSQL is already available at `127.0.0.1:5432`:
+If PostgreSQL is available at `127.0.0.1:5432`:
 
 ```bash
 cargo test -p proxima-engine
@@ -91,31 +112,31 @@ export PROXIMA_LISTEN_ADDR=127.0.0.1:6432
 cargo run -p proxima-engine
 ```
 
-On PowerShell, set the two variables with `$env:PROXIMA_UPSTREAM_ADDR = "127.0.0.1:5432"` and `$env:PROXIMA_LISTEN_ADDR = "127.0.0.1:6432"`, then run `cargo run -p proxima-engine`.
+PowerShell:
 
-Connect your client to port 6432. The Engine reads configuration from its process environment; see [Configuration](CONFIGURATION.md).
+```powershell
+$env:PROXIMA_UPSTREAM_ADDR = "127.0.0.1:5432"
+$env:PROXIMA_LISTEN_ADDR = "127.0.0.1:6432"
+cargo run -p proxima-engine
+```
 
+Connect your PostgreSQL client to port 6432. The Engine reads configuration from its process environment; see [Configuration](CONFIGURATION.md).
 
-## If something fails
+## Troubleshooting
 
-| Symptom | First check | Next guide |
+| Symptom | First check | Guide |
 |---|---|---|
-| Compose cannot build | Docker is running and the first build can download dependencies | [Deployment](DEPLOYMENT.md) |
+| Compose cannot build | Docker is running and dependencies can be downloaded | [Deployment](DEPLOYMENT.md) |
 | Health endpoint refuses connection | Inspect `docker compose -f compose.dev.yaml ps` and container logs | [Operations](OPERATIONS.md) |
-| Health succeeds but SQL fails | Confirm the upstream database is ready and the proxy host/port is correct | [API reference](API.md) |
-| Query connects but tenant rows are wrong | Stop sensitive testing; review role grants and RLS policies | [Tenant isolation](TENANT_ISOLATION.md) |
-| Enrollment fails | Check token expiry, node identity persistence, and variable names without sharing secret values | [Node enrollment](NODE_ENROLLMENT.md) |
-| You need a hosted account or plan | Use the official hosted workflow | [Cloud boundary](CLOUD_CONTROL_PLANE.md) · [Billing](BILLING.md) |
+| Health succeeds but SQL fails | Confirm PostgreSQL readiness and proxy host/port | [API reference](API.md) |
+| Tenant rows are not isolated | Check token, role mapping, grants, and RLS policies | [Tenant isolation](TENANT_ISOLATION.md) |
+| Enrollment fails | Check token expiry, node identity persistence, and variable names | [Node enrollment](NODE_ENROLLMENT.md) |
+| You need a hosted account or plan | Use the hosted product | [Cloud boundary](CLOUD_CONTROL_PLANE.md) · [Billing](BILLING.md) |
 
-## Next step checklist
+## Next steps
 
-- [ ] Local SQL query through the proxy succeeds.
-- [ ] Production credentials replace every demo credential.
-- [ ] Tenant token signing occurs only in a trusted backend.
-- [ ] PostgreSQL roles are non-superuser and least-privileged.
-- [ ] RLS policies are tested with both permitted and denied tenant access.
-- [ ] TLS verification is enabled for production network paths.
-- [ ] Status/metrics endpoints are not publicly exposed without an authenticated boundary.
-- [ ] Backup, recovery, monitoring, and secret rotation procedures are documented.
-
-A checklist is a reminder, not evidence that a control is configured. Record the actual test results for your deployment.
+- [ ] Run the local SQL query through Proxima Engine.
+- [ ] Review the [architecture](ARCHITECTURE.md) and [configuration](CONFIGURATION.md).
+- [ ] Complete the [tenant isolation guide](TENANT_ISOLATION.md).
+- [ ] Connect an existing application using [driver integration recipes](INTEGRATIONS.md).
+- [ ] Review [deployment](DEPLOYMENT.md), [security](SECURITY.md), and [operations](OPERATIONS.md) before routing sensitive workloads.

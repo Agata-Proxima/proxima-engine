@@ -1,6 +1,6 @@
 # Quickstart: run Proxima Engine and query PostgreSQL
 
-Start a local PostgreSQL database and Proxima Engine, send a SQL query through the PostgreSQL wire-protocol proxy, and inspect health and Prometheus metrics. This local path requires no hosted account and no pre-existing database.
+Start a local PostgreSQL database, PgBouncer transaction pool, and Proxima Engine. Send a SQL query through the PostgreSQL wire-protocol proxy and inspect health and Prometheus metrics. This local path requires no hosted account and no pre-existing database.
 
 ## Requirements
 
@@ -22,11 +22,12 @@ PowerShell users can run the same Docker command. To edit local settings first, 
 The development profile starts:
 
 - PostgreSQL on a private Compose network.
-- Proxima Engine on port 6432, published to host loopback only.
+- PgBouncer 1.24.1 in transaction-pooling mode, with a default pool size of two.
+- Proxima Engine on port 6432, published to host loopback only; its upstream is PgBouncer.
 - The local status page on `127.0.0.1:9080`.
 - Health and Prometheus metrics on `127.0.0.1:9090`.
 
-The default database password is `local-only-change-me`. It is for this disposable local profile; use your own secret for any other environment.
+The default PostgreSQL password is `local-only-change-me`. The matching local PgBouncer credential is stored in `pgbouncer-userlist.txt`. If you change `POSTGRES_PASSWORD` in `.env`, update the matching `proxima` entry in that file as well. These credentials are for the disposable local profile.
 
 ## 2. Confirm Engine health and status
 
@@ -58,7 +59,7 @@ docker compose -f compose.dev.yaml exec postgres psql -U proxima -d appdb -c "CR
 
 ## 4. Query through Proxima Engine
 
-The client now connects to the Engine, which forwards the PostgreSQL protocol session to the database:
+The client connects to the Engine. The Engine forwards the PostgreSQL session through PgBouncer to PostgreSQL:
 
 ```bash
 docker compose -f compose.dev.yaml exec postgres psql "host=engine port=6432 dbname=appdb user=proxima password=local-only-change-me sslmode=disable" -c "SELECT * FROM quickstart_messages;"
@@ -66,7 +67,7 @@ docker compose -f compose.dev.yaml exec postgres psql "host=engine port=6432 dbn
 
 Expected result: one row containing `hello through Proxima`.
 
-This confirms the local container build, PostgreSQL connectivity, Engine listener, and end-to-end SQL forwarding.
+This confirms the local container build, PostgreSQL connectivity, Engine listener, PgBouncer upstream, and end-to-end SQL forwarding.
 
 ## 5. Inspect Prometheus metrics
 
@@ -96,9 +97,9 @@ docker compose -f compose.dev.yaml down -v
 
 ## Next: verify tenant isolation
 
-The quickstart demonstrates PostgreSQL connectivity through the Engine. The Compose profile starts with tenant-token enforcement disabled so the first SQL connection is straightforward.
+The quickstart starts with tenant-token enforcement disabled so the first SQL connection is straightforward.
 
-To verify tenant separation, continue with the [Tenant isolation guide](TENANT_ISOLATION.md). It creates two PostgreSQL roles, enables RLS, configures signed tenant context, and tests permitted and denied cross-tenant operations. For the complete verification path, see [Verification](VERIFICATION.md) and the [PgBouncer transaction-pooling evidence](../evidence/pgbouncer-transaction-pooling.txt).
+Continue with the [Tenant isolation guide](TENANT_ISOLATION.md). It creates two PostgreSQL roles, enables RLS, configures signed tenant context, and tests permitted and denied cross-tenant operations. The local stack routes Engine traffic through PgBouncer transaction pooling, so the guide also gives you the same topology used by the repository's [recorded pooling evidence](../evidence/pgbouncer-transaction-pooling.txt).
 
 ## Run natively without Docker
 
@@ -128,6 +129,7 @@ Connect your PostgreSQL client to port 6432. The Engine reads configuration from
 |---|---|---|
 | Compose cannot build | Docker is running and dependencies can be downloaded | [Deployment](DEPLOYMENT.md) |
 | Health endpoint refuses connection | Inspect `docker compose -f compose.dev.yaml ps` and container logs | [Operations](OPERATIONS.md) |
+| Engine cannot connect upstream | Check PgBouncer health, role credentials, and `PROXIMA_UPSTREAM_ADDR` | [Operations](OPERATIONS.md) |
 | Health succeeds but SQL fails | Confirm PostgreSQL readiness and proxy host/port | [API reference](API.md) |
 | Tenant rows are not isolated | Check token, role mapping, grants, and RLS policies | [Tenant isolation](TENANT_ISOLATION.md) |
 | Enrollment fails | Check token expiry, node identity persistence, and variable names | [Node enrollment](NODE_ENROLLMENT.md) |

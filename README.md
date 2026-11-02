@@ -52,8 +52,8 @@ The Cloud application and its private source are separate from this public Engin
 ```mermaid
 flowchart LR
   App["Application + existing PostgreSQL driver"] -->|"PostgreSQL protocol + signed tenant context"| Engine["Proxima Engine · Rust"]
-  Engine -->|"Verified tenant → dedicated DB role"| Role["Tenant PostgreSQL role"]
-  Role --> PG[("PostgreSQL · grants + RLS")]
+  Engine -->|"Tenant-specific PostgreSQL role"| Pool["PgBouncer transaction pool (optional)"]
+  Pool --> PG[("PostgreSQL · grants + RLS")]
   Engine --> Health["Health / status"]
   Engine --> Metrics["Prometheus metrics"]
   Cloud["Agata Proxima Cloud · hosted control plane"] -.->|"Authorized enrollment and management"| Engine
@@ -71,7 +71,7 @@ cd proxima-engine
 docker compose -f compose.dev.yaml up --build -d
 ```
 
-Check the local listeners:
+The local profile starts PostgreSQL, PgBouncer in transaction-pooling mode, and Proxima Engine. Check the local listeners:
 
 ```bash
 curl -fsS http://127.0.0.1:9090/healthz
@@ -85,11 +85,11 @@ Invoke-RestMethod http://127.0.0.1:9090/healthz
 Invoke-RestMethod http://127.0.0.1:9080/api/status
 ```
 
-Then follow the [Quickstart](docs/QUICKSTART.md) to create a table, send a real SQL query through the Engine, inspect metrics, and stop the local stack. The Compose profile uses disposable local credentials and synthetic data.
+Then follow the [Quickstart](docs/QUICKSTART.md) to create a table, send a real SQL query through the Engine and PgBouncer, inspect metrics, and stop the local stack. The Compose profile uses disposable local credentials and synthetic data.
 
 ## Verify tenant isolation
 
-The repository includes a runnable two-tenant PostgreSQL integration test and a documented PgBouncer transaction-pooling evidence record.
+The repository includes a runnable two-tenant PostgreSQL integration test and a recorded PgBouncer transaction-pooling evidence report.
 
 The verification path covers:
 
@@ -133,7 +133,7 @@ See [Tenant isolation](docs/TENANT_ISOLATION.md), [Verification](docs/VERIFICATI
 
 - **Website and hosted account:** [agataproxima.com](https://agataproxima.com)
 - **Plans and billing:** [Hosted plan information](docs/BILLING.md)
-- **Support:** [support@agataproxima.com](mailto:support@agataproxima.com)
+- **Support:** use the contact route published on [agataproxima.com](https://agataproxima.com)
 - **Security reports:** follow the private process in [SECURITY.md](SECURITY.md)
 - **Community:** [Discord](https://discord.gg/xsYSuDMzg)
 

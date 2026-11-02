@@ -26,8 +26,6 @@ The Engine keeps each accepted client connection bound to its own upstream sessi
 
 ## Required deployment configuration
 
-Before routing application traffic:
-
 - [ ] Pin and review the exact source commit or container image digest.
 - [ ] Set `PROXIMA_TENANT_SIGNING_KEY` and verify that tenant-token enforcement is active in the Engine status output.
 - [ ] Issue short-lived tenant tokens only from a trusted backend after authenticating the user and authorizing tenant membership.
@@ -52,6 +50,6 @@ Before routing application traffic:
 
 ## Report a vulnerability
 
-Do not publish exploitable vulnerabilities, credentials, tenant data, or sensitive logs in public issues. Use [support@agataproxima.com](mailto:support@agataproxima.com) with the subject **Private security report — Proxima Engine**. Include the affected commit, impact, safe reproduction steps, and a proposed mitigation when available. Do not include live secrets or customer data.
+Do not publish exploitable vulnerabilities, credentials, tenant data, or sensitive logs in public issues. Use the maintainer contact route published through the [Agata Proxima GitHub organization](https://github.com/Agata-Proxima) to request private disclosure instructions. Include the affected commit, impact, safe reproduction steps, and a proposed mitigation when available. Do not include live secrets or customer data.
 
 See the repository [Security Policy](../SECURITY.md) for the reporting process.

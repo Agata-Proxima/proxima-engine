@@ -17,9 +17,6 @@ fi
 export PROXIMA_TENANT_SIGNING_KEY
 PROXIMA_TENANT_SIGNING_KEY="$(python3 -c 'import json; print(json.load(open(".proxima-dev/dev-config.json"))["tenant_signing_key"])')"
 
-token_a="$(python3 scripts/agata.py token --tenant tenant_a --ttl 300)"
-token_b="$(python3 scripts/agata.py token --tenant tenant_b --ttl 300)"
-
 "${COMPOSE[@]}" up --build -d
 
 for attempt in $(seq 1 40); do
@@ -65,6 +62,10 @@ GRANT USAGE ON SCHEMA pgbouncer_tenant_test TO proxima_tenant_tenant_a, proxima_
 GRANT SELECT, INSERT, UPDATE, DELETE ON pgbouncer_tenant_test.records TO proxima_tenant_tenant_a, proxima_tenant_tenant_b;
 GRANT USAGE, SELECT ON SEQUENCE pgbouncer_tenant_test.records_id_seq TO proxima_tenant_tenant_a, proxima_tenant_tenant_b;
 SQL
+
+# Mint fresh tokens after the Engine build and database setup.
+token_a="$(python3 scripts/agata.py token --tenant tenant_a --ttl 600)"
+token_b="$(python3 scripts/agata.py token --tenant tenant_b --ttl 600)"
 
 run_tenant() {
   local token="$1"

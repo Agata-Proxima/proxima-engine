@@ -4,9 +4,11 @@ This policy covers the **public Proxima Engine repository**. The hosted Agata Pr
 
 ## Report a vulnerability privately
 
-**Do not open a public issue or pull request for an exploitable vulnerability.** Do not publish credentials, signing keys, tenant data, customer information, or sensitive logs.
+**Do not open a public issue or pull request for an exploitable vulnerability.**
 
-Use the maintainer contact route published through the [Agata Proxima GitHub organization](https://github.com/Agata-Proxima) to request private disclosure instructions. Include the affected repository, commit SHA or release, impact, safe reproduction steps, and a proposed mitigation when available. Do not include live secrets or customer data.
+Email **[support@agataproxima.com](mailto:support@agataproxima.com)** with the subject **Private Security Report — Proxima Engine**. This is the private reporting contact for vulnerabilities in this public repository.
+
+Include the affected repository, commit SHA or release, impact, safe reproduction steps, and a proposed mitigation when available. Do not include live credentials, signing keys, customer information, tenant records, or other secrets. Maintainers will use the contact details in the report to coordinate follow-up and responsible disclosure.
 
 Please allow maintainers reasonable time to investigate, coordinate a fix, and prepare responsible disclosure before publishing exploit details.
 
@@ -16,7 +18,7 @@ In scope: vulnerabilities in the source code and documented behavior of this pub
 
 Hosted account data, private Cloud source, internal hosted endpoints, credentials, and another customer's information are outside the scope of this public repository.
 
-For hosted account or billing questions, use the official [Agata Proxima website](https://agataproxima.com).
+For hosted account or billing questions, use [support@agataproxima.com](mailto:support@agataproxima.com) or the official [Agata Proxima website](https://agataproxima.com).
 
 ## Safe testing
 

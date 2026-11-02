@@ -1,25 +1,36 @@
-# Developer evaluation challenge
+# Developer evaluation
 
-Agata Proxima is an open-source Rust PostgreSQL wire-protocol proxy. It does not replace PostgreSQL, application authorization, grants, or RLS.
+Agata Proxima provides security infrastructure for multi-tenant PostgreSQL applications. Proxima Engine is the open-source Rust PostgreSQL-protocol gateway that verifies signed tenant context and routes each session to a tenant-specific database role.
 
-## Reproduce the boundary
+## Evaluate the Engine
 
-Use a disposable database with synthetic records. Start with the [Quickstart](QUICKSTART.md), then run the [tenant-isolation lab](TENANT_ISOLATION.md). The default quickstart does not enable tenant enforcement and does not prove isolation.
+Start with the [Quickstart](QUICKSTART.md) to launch the local stack and execute a real SQL query through the Engine. Then follow the [Tenant isolation guide](TENANT_ISOLATION.md) to create two PostgreSQL roles, configure Row-Level Security, and verify tenant-specific access.
 
-Verify: (1) Tenant A can read its own synthetic row; (2) Tenant A cannot see Tenant B's row; (3) cross-tenant writes are rejected by PostgreSQL RLS; (4) invalid or missing signed tenant context is rejected when enforcement is enabled. Record the Engine commit, PostgreSQL version, non-secret commands, and sanitized output. Never publish signing keys, passwords, tokens, or customer data. These checks do not certify production security.
+The repository's verification material includes:
+
+- Successful Tenant A and Tenant B authentication through the Engine.
+- Tenant-specific reads that return only the authorized tenant's row.
+- Cross-tenant reads that return zero rows.
+- Cross-tenant writes rejected by PostgreSQL RLS.
+- Rejection of missing or invalid signed tenant context when enforcement is enabled.
+- PgBouncer transaction-pooling evidence showing backend reuse within each tenant role and separate backend process identities across the two tenant roles.
+
+Review the exact commands and observed results in [Tenant isolation](TENANT_ISOLATION.md), [Verification](VERIFICATION.md), and [PgBouncer evidence](../evidence/pgbouncer-transaction-pooling.txt).
+
+## Explore the implementation
+
+- [Architecture](ARCHITECTURE.md) — request flow, tenant context, role mapping, and source layout.
+- [Configuration](CONFIGURATION.md) — runtime settings and secure defaults.
+- [Driver integrations](INTEGRATIONS.md) — existing PostgreSQL drivers for Node.js, Python, Rust, and psql.
+- [Deployment](DEPLOYMENT.md) — container deployment, TLS, networking, and persistence.
+- [Security model](SECURITY.md) — implemented controls and operational configuration.
 
 ## Participate
 
-[Star/watch the Engine](https://github.com/Agata-Proxima/proxima-engine) to follow changes. [Open an issue](https://github.com/Agata-Proxima/proxima-engine/issues) for reproducible bugs, driver compatibility, confusing setup, or improvement requests. Read [Contributing](../CONTRIBUTING.md) before a pull request. Report vulnerabilities privately through [SECURITY.md](../SECURITY.md), not in public issues.
+[Star or follow the Engine](https://github.com/Agata-Proxima/proxima-engine) to track changes. Use [GitHub Issues](https://github.com/Agata-Proxima/proxima-engine/issues) for reproducible bugs, driver compatibility reports, and improvement requests. Read [Contributing](../CONTRIBUTING.md) before submitting a pull request. Report vulnerabilities privately through the repository [Security Policy](../SECURITY.md).
 
-## Launch assets checklist
+## Project resources
 
-- Square logo with clear contrast.
-- Homepage screenshot with product promise and developer CTA.
-- Public GitHub README screenshot showing the quickstart.
-- Terminal screenshot of successful tenant read and denied cross-tenant operation, using synthetic data only.
-- Optional short recording: start Engine, run permitted and denied test, show documentation. Exclude all secrets.
-
-Website: https://agataproxima.com
-
-Engine: https://github.com/Agata-Proxima/proxima-engine
+- Website: https://agataproxima.com
+- Engine: https://github.com/Agata-Proxima/proxima-engine
+- [Discord community](https://discord.gg/xsYSuDMzg)

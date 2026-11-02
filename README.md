@@ -133,8 +133,8 @@ See [Tenant isolation](docs/TENANT_ISOLATION.md), [Verification](docs/VERIFICATI
 
 - **Website and hosted account:** [agataproxima.com](https://agataproxima.com)
 - **Plans and billing:** [Hosted plan information](docs/BILLING.md)
-- **Support:** use the contact route published on [agataproxima.com](https://agataproxima.com)
-- **Security reports:** follow the private process in [SECURITY.md](SECURITY.md)
+- **Support:** [support@agataproxima.com](mailto:support@agataproxima.com)
+- **Security reports:** [Private vulnerability reporting instructions](SECURITY.md)
 - **Community:** [Discord](https://discord.gg/xsYSuDMzg)
 
 ## Open-source scope

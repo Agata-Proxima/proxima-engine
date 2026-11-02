@@ -1,17 +1,17 @@
-# Driver integration recipes
+# PostgreSQL driver integration recipes
 
-Proxima speaks the PostgreSQL wire protocol. Keep the driver you already use and point it at the Engine's host and port. If tenant enforcement is enabled, a trusted server must generate a valid tenant token and pass it during connection startup.
+Proxima Engine speaks the PostgreSQL wire protocol. Keep the driver already used by your application and point its host and port at the Engine. When tenant enforcement is enabled, the trusted application backend supplies a signed tenant token during PostgreSQL connection startup.
 
-The examples below use local addresses and `sslmode=disable` for development only. Use validated TLS in production.
+The examples use local addresses and `sslmode=disable` for development. Configure verified TLS for deployed connections.
 
 ## Connection flow
 
 ```mermaid
 flowchart LR
-  Backend[Application backend] --> Driver[Existing PostgreSQL driver]
+  Backend[Trusted application backend] --> Driver[Existing PostgreSQL driver]
   Driver -->|PostgreSQL wire protocol| Engine[Proxima Engine]
-  Engine -->|validated tenant context and role routing| DB[(PostgreSQL + RLS)]
-  Backend -. creates trusted tenant context .-> Token[Signed tenant token]
+  Engine -->|Verified tenant + role routing| DB[(PostgreSQL + RLS)]
+  Backend -. authorizes tenant and signs context .-> Token[Signed tenant token]
   Token -. connection startup option .-> Driver
 ```
 
@@ -26,27 +26,25 @@ psql "host=127.0.0.1 port=6432 dbname=appdb user=proxima sslmode=disable" \
   -c "SELECT current_user, current_database();"
 ```
 
-The client username is the proxy login name. The Engine rewrites the upstream PostgreSQL username to the role derived from the signed tenant ID. The password must authenticate as that upstream tenant role.
+The client username is the proxy login name. The Engine derives the upstream PostgreSQL username from the signed tenant ID. The supplied password must authenticate as that tenant's upstream database role.
 
 ## Node.js — node-postgres (`pg`)
 
-Install the PostgreSQL driver in your application:
+Install the driver:
 
 ```bash
 npm install pg
 ```
 
-Example server-side connection:
+Server-side connection:
 
 ```javascript
 import pg from "pg";
 
 const { Client } = pg;
-
-// Obtain these values from trusted server-side configuration.
-// Generate the token only after checking the signed-in user's tenant access.
 const tenantToken = process.env.PROXIMA_TENANT_TOKEN;
 if (!tenantToken) throw new Error("PROXIMA_TENANT_TOKEN is required");
+
 const client = new Client({
   host: process.env.PROXIMA_HOST ?? "127.0.0.1",
   port: Number(process.env.PROXIMA_PORT ?? 6432),
@@ -54,7 +52,7 @@ const client = new Client({
   user: process.env.PROXIMA_LOGIN ?? "proxima",
   password: process.env.TENANT_DATABASE_PASSWORD,
   options: `-c proxima_tenant_token=${tenantToken}`,
-  // For local-only development. Configure verified TLS in production.
+  // Local development only. Configure verified TLS for deployed connections.
   ssl: false,
 });
 
@@ -67,7 +65,7 @@ try {
 }
 ```
 
-Do not embed the tenant signing key in this application client or browser bundle. Only a trusted backend should mint the token.
+Generate the token only after the trusted backend has checked the signed-in user's tenant access.
 
 ## Python — Psycopg 3
 
@@ -81,7 +79,6 @@ python -m pip install "psycopg[binary]"
 import os
 import psycopg
 
-# Supply this only from a trusted backend after tenant authorization.
 tenant_token = os.environ["PROXIMA_TENANT_TOKEN"]
 with psycopg.connect(
     host=os.getenv("PROXIMA_HOST", "127.0.0.1"),
@@ -97,7 +94,7 @@ with psycopg.connect(
 
 ## Rust — tokio-postgres
 
-Add `tokio-postgres` and `tokio` to your application dependencies. This example uses `NoTls` only for local development:
+Add `tokio-postgres` and `tokio` to your application dependencies. This example uses `NoTls` for local development:
 
 ```rust
 use tokio_postgres::{config::SslMode, NoTls};
@@ -130,34 +127,37 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-## Connection pool notes
+## Connection pooling
+
+Tenant identity is selected when the physical PostgreSQL connection starts. Configure application pools so each pool uses one tenant identity and its corresponding database-role credentials.
+
+The Engine keeps each accepted client connection bound to its own upstream PostgreSQL session. When PgBouncer transaction pooling is used downstream, the Engine's tenant-specific upstream username forms part of PgBouncer's database/user pool identity. This keeps distinct tenant roles in separate pools.
+
+The recorded [PgBouncer transaction-pooling evidence](../evidence/pgbouncer-transaction-pooling.txt) shows five sequential connections reusing a backend PID within each tenant role, with separate backend PIDs observed for Tenant A and Tenant B.
 
 - Mint or refresh tenant tokens on the trusted server side.
-- A token is checked when a physical PostgreSQL connection starts. Do not assume a pool will automatically refresh a token for new connections.
-- Avoid sharing one physical connection across different tenant identities. Use tenant-aware pool separation or create connections with the appropriate signed context.
-- Set pool size and timeouts for the Engine's configured connection limit.
-- Do not route production traffic directly to PostgreSQL as a way around the Engine.
+- Configure pool lifetime and token expiry together; a token is checked when a physical connection starts.
+- Do not retarget an established physical connection from one tenant identity to another.
+- Set pool size and timeouts with the Engine's connection limit in mind.
+- Route application traffic through the Engine endpoint.
 
-## Is there an official SDK?
+## SDK availability
 
-This repository provides the Engine and PostgreSQL connection contract; it does not publish a standalone npm, Python, or Rust Proxima SDK. The examples use existing PostgreSQL drivers and avoid suggesting that an unpublished package exists.
-
+This repository provides the Engine and PostgreSQL connection contract. It does not publish a standalone npm, Python, or Rust Proxima SDK. The examples use existing PostgreSQL drivers.
 
 ## Integration checklist
 
-Before moving a driver example into a real service:
+1. Use a PostgreSQL driver supported by your application runtime.
+2. Keep connection strings and credentials server-side.
+3. Authenticate the caller and authorize tenant membership before issuing a short-lived signed token.
+4. Configure application traffic to use the Engine endpoint.
+5. Test selected roles and RLS policies with at least two synthetic tenants, including denied cross-tenant reads and writes.
+6. Configure connection timeouts, pooling, retries, and TLS verification for your deployment.
+7. Redact passwords, tokens, and tenant-sensitive query values from application logs.
 
-1. Use the database driver and runtime versions supported by your application; these recipes illustrate connection shape, not a universal compatibility guarantee.
-2. Keep the connection string and credentials server-side. Never ship the tenant signing key to a browser, mobile app, or public client bundle.
-3. Authenticate the caller and authorize the tenant in trusted application code before issuing a short-lived signed tenant token.
-4. Configure the Engine's PostgreSQL endpoint, not the upstream database endpoint, for application traffic intended to traverse the proxy.
-5. Test the selected database role and RLS policy with at least two synthetic tenants, including a query that must return no cross-tenant rows.
-6. Configure connection timeouts, pooling, retries, and TLS verification deliberately; do not assume the proxy removes the need for application-level resilience.
-7. Ensure application logs redact passwords, tokens, and tenant-sensitive query values.
+## Common integration issues
 
-## Common integration mistakes
-
-- **Connection succeeds, but the wrong rows are visible:** review the token tenant ID, database role mapping, and RLS policy.
-- **Token validation fails:** check the documented token format, expiry, signing secret, and system clock; do not disable enforcement to make a test pass.
-- **Local example works, deployment fails:** verify DNS, firewall rules, TLS trust, container networking, and effective environment variables from the Engine runtime.
-- **Looking for an SDK package:** this repository documents existing PostgreSQL drivers and does not claim a separately published Proxima SDK.
+- **Unexpected rows:** inspect the token tenant ID, derived database role, grants, and RLS policy.
+- **Token validation error:** check token format, expiry, signing key, and system clock.
+- **Deployment connectivity failure:** inspect DNS, firewall rules, TLS trust, container networking, and the Engine's effective environment.
+- **Looking for an SDK:** use the existing PostgreSQL driver examples in this guide.

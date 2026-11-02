@@ -143,7 +143,7 @@ The recorded [PgBouncer transaction-pooling evidence](../evidence/pgbouncer-tran
 
 ## SDK availability
 
-This repository provides the Engine and PostgreSQL connection contract. It does not publish a standalone npm, Python, or Rust Proxima SDK. The examples use existing PostgreSQL drivers.
+The repository ships connection recipes for standard PostgreSQL driver packages. Use your application's existing driver with the Engine endpoint; these integrations require no separate Proxima SDK dependency.
 
 ## Integration checklist
 

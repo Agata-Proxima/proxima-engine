@@ -1,6 +1,6 @@
 # Developer security walkthrough: tenant access scenarios
 
-This walkthrough provides repeatable commands for checking tenant authentication and PostgreSQL row boundaries with synthetic data. The repository also includes recorded execution evidence for tenant isolation and PgBouncer transaction pooling.
+This walkthrough provides repeatable commands for checking tenant authentication and PostgreSQL row boundaries with synthetic data. The repository includes an automated PgBouncer transaction-pooling test and recorded execution evidence.
 
 ## Setup
 
@@ -52,17 +52,29 @@ Expected: PostgreSQL rejects the write under RLS.
 
 Generate a Tenant B token using [Tenant isolation](TENANT_ISOLATION.md), connect with Tenant B's database-role password, and repeat the permitted read. Expected result: only `tenant_b | B-secret`.
 
-## Recorded PgBouncer transaction-pooling evidence
+## Automated PgBouncer transaction-pooling test
 
-The repository records a local run using PgBouncer 1.24.1 in transaction mode and PostgreSQL 17. Five sequential connections for each tenant reused that tenant's backend PID. Tenant A and Tenant B used distinct PostgreSQL roles and distinct observed backend PIDs.
+Run:
 
-See [PgBouncer transaction-pooling evidence](../evidence/pgbouncer-transaction-pooling.txt) for the environment, SQL checks, backend PID observations, and result summary.
+```bash
+bash ../scripts/test-pgbouncer-pooling.sh
+```
 
-The recorded evidence demonstrates per-tenant role separation and backend reuse within each tenant role. It records separate backend identities across the two tenant roles.
+From the repository root, the command is:
+
+```bash
+bash scripts/test-pgbouncer-pooling.sh
+```
+
+The test starts PostgreSQL, PgBouncer 1.24.1, and Proxima Engine in an isolated Compose project. It opens five sequential client connections for each tenant role and checks that each role reuses its own backend PID while Tenant A and Tenant B retain separate backend PIDs and separate PgBouncer pools.
+
+It also verifies tenant-specific reads, cross-tenant read isolation, RLS write rejection, and missing/invalid token rejection. GitHub Actions runs this test on pull requests and pushes to `main`.
+
+The earlier local execution record is available in [PgBouncer transaction-pooling evidence](../evidence/pgbouncer-transaction-pooling.txt).
 
 ## Evidence and safe operation
 
-For reproducible results, record the Engine commit, PostgreSQL version, exact commands, exit status, and sanitized output. Use synthetic data and redact signing keys, passwords, tokens, private addresses, and customer information.
+For reproducible results, record the Engine commit, PostgreSQL and PgBouncer versions, exact commands, exit status, and sanitized output. Use synthetic data and redact signing keys, passwords, tokens, private addresses, and customer information.
 
 The Engine validates signed tenant context and maps the verified tenant to a PostgreSQL role. PostgreSQL grants and RLS policies enforce the row boundary. The trusted application backend remains responsible for authenticating users and authorizing tenant membership before issuing tenant tokens.
 

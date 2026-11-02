@@ -1,52 +1,37 @@
-# Hosted plans and billing
+# Agata Proxima Cloud plans and billing
 
-This page describes the commercial boundary, not a price quote or promise of particular entitlements.
+Plans, checkout, subscriptions, invoices, and upgrades are managed by the hosted Agata Proxima Cloud product. The public Proxima Engine repository contains the open-source PostgreSQL data plane; it does not process payments or assign hosted plan entitlements.
 
-## Where billing happens
+## Review plans and billing
 
-```mermaid
-flowchart LR
-  User[Account owner] --> Cloud[Agata Proxima hosted account]
-  Cloud --> Plans[Plan and entitlement selection]
-  Plans --> Checkout[Hosted checkout]
-  Checkout --> Subscription[Subscription and invoices]
-  Subscription --> Limits[Account plan limits and usage]
-  User --> Upgrade[Choose upgrade in account]
-  Upgrade --> Checkout
-```
-
-Use the official hosted account at [agataproxima.com](https://agataproxima.com) to review the plans available to your account, compare included limits, select an upgrade, and review checkout, subscription, and invoice status. The public Engine does not process payments or grant plan entitlements.
-
-## Where billing happens
-
-Plan selection, checkout, subscription status, invoices, and upgrades belong to the separate Agata Proxima Cloud product. The public Engine repository does not implement checkout or grant hosted plan entitlements.
-
-Start at [agataproxima.com](https://agataproxima.com) and use the plan and billing information displayed for your account. Current checkout and account screens are the source of truth for price, currency, availability, limits, and overage terms. Do not infer exact limits from plan names.
+Open [agataproxima.com](https://agataproxima.com) and use the account workflow to review the plans available to your organization. The live account and checkout screens provide the current price, currency, billing interval, included limits, taxes, renewal date, and overage terms.
 
 ## Plan families
 
-| Plan | What to check |
+| Plan | Evaluation focus |
 |---|---|
-| Free | Features and usage actually enabled for evaluation |
-| Starter | Included resources, seats, and usage limits |
-| Growth | Higher included usage and any advanced controls |
+| Free | Available evaluation features and usage |
+| Starter | Included resources, seats, and usage |
+| Growth | Higher included usage and advanced controls |
 | Scale | Capacity, security features, and support terms |
-| Enterprise | Custom capacity, support, compliance, and contract terms confirmed directly |
+| Enterprise | Custom capacity, support, compliance, and contract terms |
 
-Review the live plan comparison for the exact included tenants, environments, integrations, verifications, seats, usage reset, and overage rules. These values are deliberately not invented in this public Engine repository.
+Use the live plan comparison for exact tenant, environment, integration, verification, seat, usage-reset, and overage details. Plan entitlements are controlled by the hosted account.
 
 ## Before upgrading
 
-1. Confirm plan, billing interval, currency, taxes, and renewal date.
-2. Review included limits and what counts as usage.
-3. Check overage, cancellation, and payment terms at checkout.
-4. Confirm which features require a higher tier.
-5. After checkout, verify the plan and feature access in your account; a redirect alone does not prove entitlements were applied.
+1. Confirm the plan, billing interval, currency, taxes, and renewal date.
+2. Review included limits and the usage counters that apply to your organization.
+3. Read the checkout terms for overage, cancellation, and payment conditions.
+4. Confirm which hosted features are included in the selected tier.
+5. After checkout, confirm the resulting plan and feature access in the account.
 
-## Separation from Engine
+## Relationship to Proxima Engine
 
-Running the open-source Engine does not create a subscription. Running it also does not bypass Cloud plan checks or grant private hosted features. See [Cloud control-plane boundary](CLOUD_CONTROL_PLANE.md).
+Running the open-source Engine does not create a Cloud subscription. Hosted account features and plan entitlements are managed separately by Agata Proxima Cloud. Self-managed Engine deployments can be built and operated independently.
+
+See [Cloud control-plane boundary](CLOUD_CONTROL_PLANE.md) and [Open-source scope](OPEN_SOURCE_SCOPE.md).
 
 ## Support
 
-Use [support@agataproxima.com](mailto:support@agataproxima.com) only while the mailbox is active and monitored, or visit [agataproxima.com](https://agataproxima.com). Never email payment-card data, API secrets, tenant records, or passwords.
+For hosted account and billing assistance, use the contact route published on [agataproxima.com](https://agataproxima.com). Do not send payment-card data, API secrets, tenant records, or passwords by email.

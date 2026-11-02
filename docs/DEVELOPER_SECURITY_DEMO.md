@@ -54,13 +54,7 @@ Generate a Tenant B token using [Tenant isolation](TENANT_ISOLATION.md), connect
 
 ## Automated PgBouncer transaction-pooling test
 
-Run:
-
-```bash
-bash ../scripts/test-pgbouncer-pooling.sh
-```
-
-From the repository root, the command is:
+From the repository root, run:
 
 ```bash
 bash scripts/test-pgbouncer-pooling.sh

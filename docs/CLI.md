@@ -1,8 +1,8 @@
-# Agata CLI (public Engine)
+# Agata CLI for Proxima Engine
 
-This is a real local Engine command-line tool implemented with Python 3.10+ standard library. It is **not** an npm package or the separate hosted Cloud CLI.
+The public Engine repository includes a Python 3.10+ command-line tool implemented with the Python standard library. It bootstraps local development identity, creates signed tenant test tokens, checks local diagnostics, and reports Engine status.
 
-From the repository root:
+Run commands from the repository root:
 
 ```bash
 python scripts/agata.py --help
@@ -12,12 +12,40 @@ python scripts/agata.py doctor
 python scripts/agata.py status
 ```
 
-For Windows PowerShell, use the same commands with `python`. On Unix, `python3` may be required.
+On Windows PowerShell, use the same commands with `python`. On Unix-like systems, `python3` may be the configured interpreter.
 
-`init` creates local credentials in `.proxima-dev/` and refuses to overwrite existing credentials. Configure the Engine's `PROXIMA_TENANT_SIGNING_KEY` using the literal `tenant_signing_key` from `.proxima-dev/dev-config.json`; never publish it. The CLI does not automatically modify running containers or register a hosted node.
+## Commands
 
-`verify-token` accepts a generated token as a positional argument, but remember shell command-line arguments may appear in process listings; do not use this for sensitive production credentials.
+| Command | Purpose |
+|---|---|
+| `init` | Generate local node identity and tenant-signing credentials in `.proxima-dev/` |
+| `token` | Mint a short-lived signed tenant-context token |
+| `verify-token` | Validate a token against the configured local signing key |
+| `doctor` | Check local Engine endpoints and development prerequisites |
+| `status` | Read local Engine status information |
 
-`doctor` and `status` read only local Engine HTTP endpoints. Neither proves tenant isolation. For positive/negative database isolation checks, run [the tenant isolation lab](TENANT_ISOLATION.md) against a disposable PostgreSQL database.
+Use `python scripts/agata.py <command> --help` to inspect command-specific arguments.
 
-Test locally with `python -m unittest discover -s tests_cli -v`.
+## Local credential setup
+
+The `init` command creates `.proxima-dev/dev-config.json` and `.proxima-dev/node-identity.json`. It refuses to overwrite existing credentials. Configure the Engine's `PROXIMA_TENANT_SIGNING_KEY` with the literal `tenant_signing_key` value from the generated config.
+
+The `.proxima-dev/` directory contains secrets and is ignored by Git. Keep it local and do not publish its contents.
+
+The CLI operates on local development identity and local Engine endpoints. Hosted node registration and account workflows are managed separately by Agata Proxima Cloud.
+
+## Token handling
+
+`verify-token` accepts a generated token as a positional argument. Shell command-line arguments may appear in process listings, so use this mode with local test credentials only. Keep production tokens in protected process environments and secret stores.
+
+## Verify tenant access
+
+`doctor` and `status` inspect local Engine HTTP endpoints. To test database access boundaries, follow [Tenant isolation](TENANT_ISOLATION.md) with a disposable PostgreSQL database.
+
+Run the CLI unit tests:
+
+```bash
+python -m unittest discover -s tests_cli -v
+```
+
+For the full Rust and PostgreSQL verification path, see [Verification](VERIFICATION.md).

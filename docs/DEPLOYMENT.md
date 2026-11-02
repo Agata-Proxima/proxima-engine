@@ -1,19 +1,18 @@
 # Deploy Proxima Engine
 
-This guide covers building the Engine container and deploying it beside an existing PostgreSQL service. It does not deploy a hosted control plane.
+This guide builds the Engine container and runs it beside an existing PostgreSQL service. The Engine is the database-facing data plane; hosted organization and billing workflows remain in Agata Proxima Cloud.
 
 ## Deployment topology
 
 ```mermaid
 flowchart LR
-  App[Application service] -->|private network| Engine[Proxima Engine container]
+  App[Application service] -->|private network| Engine[Proxima Engine]
   Engine -->|private database connection| DB[(PostgreSQL)]
   Monitor[Restricted monitoring] --> Health[Health and metrics listeners]
-  Health -. localhost or private network only .-> Monitor
-  Cloud[Agata Proxima hosted control plane] -. outbound enrollment when configured .-> Engine
+  Cloud[Agata Proxima Cloud] -. optional outbound enrollment .-> Engine
 ```
 
-Keep PostgreSQL, the Engine proxy, and unauthenticated status/metrics listeners off the public internet. Apply network policy, TLS, secret management, persistent storage, and backups appropriate to your environment.
+Keep PostgreSQL, the Engine listener, and unauthenticated status/metrics listeners on private networks. Apply network policy, TLS, secret management, persistent storage, and backups for the environment.
 
 ## 1. Build the image
 
@@ -23,11 +22,11 @@ From the repository root:
 docker build -t agata-proxima-engine:local .
 ```
 
-The image uses a multi-stage Rust build, runs as a non-root user, and includes the logo and local status page embedded in the binary.
+The multi-stage image builds the Rust Engine, runs it as a non-root user, and embeds the local status page and logo in the binary.
 
-## 2. Run against a reachable PostgreSQL server
+## 2. Run against PostgreSQL
 
-The Engine must be able to reach the configured upstream from inside its container. Replace the example address with a DNS name or IP reachable from the container:
+The Engine must be able to reach its upstream database from inside the container. Replace the sample address with a DNS name or IP reachable from the container:
 
 ```bash
 docker run --rm --name proxima-engine \
@@ -40,19 +39,21 @@ docker run --rm --name proxima-engine \
   agata-proxima-engine:local
 ```
 
-This example is for local testing. On Linux, `host.docker.internal` may need to be enabled with `--add-host=host.docker.internal:host-gateway`. In production, prefer a private service network and an explicit upstream hostname. Do not expose PostgreSQL to the public internet.
+On Linux, enable `host.docker.internal` with `--add-host=host.docker.internal:host-gateway` when required. For deployed environments, prefer a private service network and an explicit upstream hostname.
 
-If Prometheus needs to scrape metrics, bind the metrics listener to the container interface and publish it only on a private monitoring network. Do not expose metrics or the local dashboard to the public internet without a separate access-control layer.
+If Prometheus needs to scrape metrics, bind the metrics listener to the container interface and publish it only on a private monitoring network. The embedded status page has no built-in authentication; protect it with network policy or an authenticated access layer.
 
-## 3. Configure tenant enforcement
+## 3. Enable tenant-context enforcement
 
-For tenant-aware routing, set `PROXIMA_TENANT_SIGNING_KEY` to a strong secret of at least 32 bytes and create the matching PostgreSQL roles and RLS policies. Once configured, the Engine requires a valid signed tenant token at startup; missing, expired, malformed, or invalid tokens are rejected.
+Set `PROXIMA_TENANT_SIGNING_KEY` to a strong secret of at least 32 bytes. Create the matching PostgreSQL tenant roles and RLS policies using the [Tenant isolation guide](TENANT_ISOLATION.md).
 
-The trusted application backend must sign tenant tokens after verifying the user's access to that tenant. Never ship the signing key to a browser, mobile client, or public repository. Follow [Tenant isolation](TENANT_ISOLATION.md).
+When the signing key is configured, the Engine requires a valid signed tenant token during PostgreSQL startup. Missing, expired, malformed, or incorrectly signed tokens are rejected.
 
-## 4. Enable TLS on both legs
+The trusted application backend signs tenant tokens only after authenticating the user and authorizing tenant membership. Keep the signing key out of browsers, mobile clients, public repositories, and logs.
 
-Client-facing TLS and upstream TLS are independent. Example environment values (replace paths and hostnames with your deployment's real values):
+## 4. Configure TLS on both connections
+
+Client-facing TLS and upstream TLS are independent. Example environment values:
 
 ```bash
 PROXIMA_TLS_CERT_FILE=/run/secrets/proxima-server.crt
@@ -63,48 +64,32 @@ PROXIMA_UPSTREAM_TLS_CA_FILE=/run/secrets/postgres-ca.crt
 PROXIMA_UPSTREAM_TLS_SERVER_NAME=postgres.internal.example
 ```
 
-The certificate and key must be mounted read-only and readable by the Engine process. When upstream TLS is enabled, provide a trusted CA; `verify-full` also requires the expected server name. Test certificate rotation and expired/incorrect certificates before production use.
+Mount certificates read-only and ensure the Engine process can read them. Upstream `verify-full` uses the trusted CA and expected server name. Include certificate rotation and invalid-certificate cases in deployment verification.
 
-## 5. Persistent state and node enrollment
+## 5. Persist Engine state and enroll nodes
 
-Mount a persistent, access-restricted volume at `/var/lib/proxima`. The container defaults store node identity, the local attestation ledger, and break-glass replay records there. Back up state according to your security and recovery requirements.
+Mount a persistent, access-restricted volume at `/var/lib/proxima`. The container stores node identity, the local attestation ledger, and break-glass replay records there. Back up this state according to your recovery requirements.
 
-If you register the Engine with a compatible control plane, configure `PROXIMA_NODE_ID`, `PROXIMA_NODE_ENROLLMENT_URL`, and `PROXIMA_NODE_ENROLLMENT_TOKEN` for first enrollment. The one-time token is consumed during bootstrap; the saved identity is used on later restarts. See [Node enrollment](NODE_ENROLLMENT.md).
+For registration with a compatible control plane, configure `PROXIMA_NODE_ID`, `PROXIMA_NODE_ENROLLMENT_URL`, and `PROXIMA_NODE_ENROLLMENT_TOKEN` for the first enrollment. The one-time token is consumed during bootstrap; the saved identity is used on subsequent restarts. See [Node enrollment](NODE_ENROLLMENT.md).
 
-## 6. Production checklist
-
-- [ ] Pin the image to a reviewed release or immutable image digest.
-- [ ] Replace every local/demo password and secret.
-- [ ] Keep the Engine and PostgreSQL on private networks with firewall rules allowing only required traffic.
-- [ ] Enable client TLS and upstream TLS with certificate validation.
-- [ ] Enable tenant-token enforcement and test cross-tenant read/write denial.
-- [ ] Use least-privilege PostgreSQL roles; enforce RLS where required; remove unintended public grants.
-- [ ] Keep signing keys and identity files in a secret store or restricted persistent volume.
-- [ ] Keep dashboard and metrics endpoints private.
-- [ ] Configure log collection, alerts, capacity limits, and connection pool limits.
-- [ ] Test restart, upstream outage, token expiry, certificate expiry, backup, and recovery.
-- [ ] Run [Verification](VERIFICATION.md) against the exact image and environment.
-
-## Deployment boundary
-
-The Engine is a data-plane process, not a complete hosted service. Database provisioning, secret distribution, orchestration, ingress, load balancing, control-plane registration, backups, monitoring infrastructure, and incident response remain deployment responsibilities. Do not infer production readiness from a successful image build alone.
-
-
-## Production acceptance checklist
-
-Before directing real application traffic to an Engine deployment, record evidence for each item:
+## Deployment acceptance checklist
 
 - [ ] Pin the reviewed source revision and container image digest.
-- [ ] Replace sample credentials and store secrets outside the image and repository.
+- [ ] Replace every sample password and secret; store runtime credentials outside the image and repository.
 - [ ] Restrict PostgreSQL, proxy, status, and metrics listeners to their intended callers.
-- [ ] Enable verified TLS for production connections wherever required by the network trust model.
-- [ ] Configure least-privileged PostgreSQL roles and test RLS with two synthetic tenants.
-- [ ] Confirm tenant-token signing happens only in a trusted backend and rotate the signing secret safely.
-- [ ] Persist and protect node identity and attestation-related state according to the configuration guide.
-- [ ] Test startup, upstream outage, restart, secret rotation, backup/restore, and rollback procedures.
-- [ ] Set alerts and verify that operators can access sanitized logs and metrics.
-- [ ] Document an incident owner and a way to disable or isolate the deployment.
+- [ ] Enable verified TLS according to the network trust model.
+- [ ] Enable signed tenant-context enforcement and verify its active status.
+- [ ] Configure least-privilege PostgreSQL tenant roles and RLS policies.
+- [ ] Run positive and negative tenant-access tests with at least two synthetic tenants.
+- [ ] Keep signing keys and identity files in protected secret storage or restricted persistent volumes.
+- [ ] Test restart, upstream outage, token expiry, certificate expiry, backup/restore, and rollback.
+- [ ] Configure monitoring, alerts, log redaction, and an incident owner.
+- [ ] Run [Verification](VERIFICATION.md) against the exact image and environment.
 
-Do not mark an item complete because a sample configuration contains the setting. Verify the effective runtime configuration and record the test result. This checklist is operational guidance, not a certification or guarantee of production readiness.
+The checklist records runtime configuration and test results. Mark an item complete after verifying the effective deployment, not solely because an example setting appears in a file.
 
-For hosted account, organization, or plan workflows, use [Cloud boundary](CLOUD_CONTROL_PLANE.md); this deployment guide covers the Engine only.
+## Operating boundary
+
+The Engine handles PostgreSQL protocol traffic, tenant-context verification, role routing, and local operational endpoints. Database provisioning, secret distribution, orchestration, ingress, load balancing, monitoring infrastructure, backups, and incident response are configured by the deployment operator or the surrounding platform.
+
+For hosted account, organization, plan, and billing workflows, see [Cloud control plane](CLOUD_CONTROL_PLANE.md).

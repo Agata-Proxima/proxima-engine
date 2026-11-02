@@ -1,50 +1,47 @@
-# Node identity and enrollment
+# Proxima Engine node identity and enrollment
 
-This guide covers the Engine side of node registration: the environment variables to set, how the one-time token is consumed, where the identity is stored, and how to troubleshoot startup failures.
+This guide describes how a Proxima Engine node receives a registered identity from a compatible control plane, redeems a one-time enrollment token, and persists its signing credential for later starts.
 
-## Understand the boundary
+## Enrollment flow
 
 ```mermaid
 sequenceDiagram
   participant Admin as Organization admin
-  participant Cloud as Hosted control plane
-  participant Engine as Proxima Engine node
+  participant Cloud as Agata Proxima Cloud
+  participant Engine as Proxima Engine
   participant Store as Persistent node identity
-  Admin->>Cloud: Authorize/register node
+  Admin->>Cloud: Authorize and register node
   Cloud-->>Admin: Node UUID + one-time enrollment token
-  Admin->>Engine: Configure enrollment settings
-  Engine->>Cloud: Redeem token over outbound connection
-  Cloud-->>Engine: Enrollment result
+  Admin->>Engine: Configure enrollment values
+  Engine->>Cloud: Redeem token over HTTPS
+  Cloud-->>Engine: Node identity and signing credential
   Engine->>Store: Persist node identity
   Engine->>Engine: Start with registered identity
 ```
 
-The diagram describes the intended integration sequence. Actual account authorization and token issuance happen in the hosted product; this public repository covers Engine-side configuration and persistence, not private dashboard endpoints.
+The hosted product authorizes organizations and issues registration credentials. The public repository implements the Engine-side enrollment request, response validation, and local identity persistence.
 
-## Local-only development versus hosted enrollment
+## Local developer identity and hosted enrollment
 
-For a completely offline local identity and signed test-token workflow, start with [Local developer mode](LOCAL_DEVELOPMENT.md). It generates a local node identity and test tenant credentials without a Cloud account. That identity is self-issued and does not register a node with Agata Proxima Cloud.
+For offline local development, use [Local developer mode](LOCAL_DEVELOPMENT.md). It generates a self-issued local node identity and signed test tenant tokens without a Cloud account.
 
-The Engine can run locally without any node registration. To give an Engine instance a registered identity, a compatible Agata Proxima control plane must issue a node UUID and a short-lived, one-time enrollment token. The control plane owns node creation and token issuance; this repository does not implement a node-creation REST endpoint.
-
-This guide documents the public Engine contract. It does not reproduce the hosted management application or its private API.
+For a hosted registered identity, a compatible Agata Proxima control plane issues a node UUID and a short-lived one-time enrollment token. A self-managed deployment can use its own compatible control plane.
 
 ## 1. Obtain enrollment values
 
-For hosted usage, start at [agataproxima.com](https://agataproxima.com) and use your authorized account workflow to obtain the enrollment values. The hosted management workflow and its private API are not distributed in this repository. For a self-managed setup, use your own compatible control plane.
+Start at [agataproxima.com](https://agataproxima.com) and use the authorized organization workflow to register a node and obtain:
 
-Obtain:
 - The registered node UUID.
 - The HTTPS enrollment URL ending in `/api/v1/nodes/enroll`.
 - The one-time enrollment token.
 
-The token is a secret. Copy it once into a protected terminal or secret store. Do not paste it into GitHub, screenshots, chat, logs, or an image.
+Keep the token in a protected terminal or secret store. Do not paste it into GitHub, screenshots, chat, logs, or public documentation.
 
-For local development only, an enrollment endpoint may use loopback HTTP. Use HTTPS for any remote host.
+Use HTTPS for remote control-plane hosts. Loopback HTTP is reserved for local development.
 
-## 2. Configure the Engine (PowerShell)
+## 2. Configure the Engine — PowerShell
 
-Replace the placeholders with values issued for your node:
+Replace the placeholders with the values issued for the node:
 
 ```powershell
 $env:PROXIMA_NODE_ID = "<node-uuid>"
@@ -57,15 +54,15 @@ $env:PROXIMA_UPSTREAM_ADDR = "127.0.0.1:5432"
 cargo run -p proxima-engine
 ```
 
-The Engine sends `POST /api/v1/nodes/enroll` with JSON containing `node_id` and `enrollment_token`. The compatible control plane validates the token and returns the node identity and signing credential. The Engine validates the returned identity and writes it to disk.
+The Engine sends `POST /api/v1/nodes/enroll` with JSON fields `node_id` and `enrollment_token`. The control plane validates the one-time token and returns the node identity and signing credential. The Engine validates the response and persists the identity.
 
-After successful enrollment, remove the one-time token from that terminal:
+Remove the bootstrap token after enrollment:
 
 ```powershell
 Remove-Item Env:PROXIMA_NODE_ENROLLMENT_TOKEN -ErrorAction SilentlyContinue
 ```
 
-## 3. Configure the Engine (Bash)
+## 3. Configure the Engine — Bash
 
 ```bash
 export PROXIMA_NODE_ID="<node-uuid>"
@@ -77,36 +74,37 @@ cargo run -p proxima-engine
 unset PROXIMA_NODE_ENROLLMENT_TOKEN
 ```
 
-Set these variables in the same process environment that starts the Engine. The Engine does not assume a plain `.env` file is automatically loaded.
+Set the values in the same process environment that starts the Engine. The Engine reads process environment variables; it does not automatically load a plain `.env` file.
 
-## 4. Protect and persist the identity
+## 4. Persist and protect the identity
 
-The default identity path is:
+Default identity paths:
+
 - Windows: `%LOCALAPPDATA%\AgataProxima\node-identity.json`, when `LOCALAPPDATA` exists.
 - Other environments: `data/node-identity.json`.
 
-Override it with `PROXIMA_NODE_IDENTITY_PATH`. The identity file contains the node ID, organization ID, and a 32-byte signing credential. Restrict file permissions and back it up securely. The Engine reuses a valid existing identity on later starts, so the one-time token is not needed each time.
+Set `PROXIMA_NODE_IDENTITY_PATH` to choose another path. The identity file contains the node ID, organization ID, and a 32-byte signing credential. Restrict file permissions and include the file in protected backups.
 
-To enroll a different node on the same machine, use a different identity path. Do not overwrite an identity that is still in use.
+The Engine reuses a valid saved identity on later starts, so the one-time enrollment token is needed only for the initial bootstrap. Use a separate identity path for each node.
 
-## 5. Understand the different secrets
+## 5. Credential reference
 
 | Variable or file | Purpose | Handling |
-| --- | --- | --- |
-| `PROXIMA_NODE_ENROLLMENT_TOKEN` | One-time bootstrap credential | Short-lived; consumed once; remove after enrollment |
-| `PROXIMA_NODE_IDENTITY_PATH` | Persistent identity file path | Contains a signing credential; treat as a secret |
-| `PROXIMA_NODE_SIGNING_KEY_HEX` | 32-byte node signing key, hex encoded | Normally loaded from the identity file; never commit |
+|---|---|---|
+| `PROXIMA_NODE_ENROLLMENT_TOKEN` | One-time bootstrap credential | Short-lived; remove after enrollment |
+| `PROXIMA_NODE_IDENTITY_PATH` | Persistent identity file | Contains a signing credential; protect it |
+| `PROXIMA_NODE_SIGNING_KEY_HEX` | 32-byte node signing key, hex encoded | Normally loaded from saved identity; never commit |
 | `PROXIMA_TENANT_SIGNING_KEY` | HMAC key for application-signed tenant context | Separate from node credentials; at least 32 bytes |
-| `PROXIMA_ATTESTATION_INGEST_TOKEN` | Optional bearer credential for a compatible evidence receiver | Must use the expected `aga_` token prefix; never commit |
+| `PROXIMA_ATTESTATION_INGEST_TOKEN` | Optional bearer credential for a compatible evidence receiver | Use the required `aga_` prefix; never commit |
 
-These values are not interchangeable. In particular, do not use the enrollment encryption key or tenant-context signing key as a node signing key.
+These credentials serve different trust boundaries. Keep each in its designated configuration field and rotate it through the corresponding issuer.
 
 ## Troubleshooting
 
-- **401 Unauthorized:** check that the node UUID and token belong together, the token has not expired or been consumed, and the control plane URL is correct. Obtain a new token through your authorized control-plane workflow.
-- **Connection refused / timeout:** check DNS, routing, firewall rules, and that the enrollment service is listening at the configured URL.
-- **TLS certificate error:** use the correct HTTPS hostname and a trusted certificate. Do not disable certificate verification.
-- **Identity file error:** check the file path, JSON validity, and read/write permissions. Choose a separate path for a new node.
-- **Engine exits before listening:** read the startup error first; enrollment errors are fatal when enrollment variables are supplied but cannot be validated.
+- **401 Unauthorized:** verify that the node UUID and one-time token belong together and that the token is valid and unused.
+- **Connection refused or timeout:** check DNS, routing, firewall rules, and the configured enrollment URL.
+- **TLS certificate error:** use the correct HTTPS hostname and a trusted certificate chain.
+- **Identity file error:** check the path, JSON format, and read/write permissions.
+- **Engine exits before listening:** inspect the startup error and verify all supplied enrollment values.
 
-A local successful build does not verify that a remote control plane, its credentials, or your network path is configured correctly.
+See [Configuration](CONFIGURATION.md), [Operations](OPERATIONS.md), and [Cloud control-plane boundary](CLOUD_CONTROL_PLANE.md).

@@ -1,39 +1,39 @@
 # Security Policy
 
-Agata Proxima takes reports about security weaknesses seriously. This policy covers the **public Proxima Engine repository**. It does not publish or describe private hosted-service implementation details.
+This policy covers the **public Proxima Engine repository**. The hosted Agata Proxima Cloud application is a separate product and is outside this repository's public source scope.
 
 ## Report a vulnerability privately
 
-**Do not open a public issue or pull request for an exploitable vulnerability.** Do not publish credentials, signing keys, tenant data, customer information, or sensitive logs.
+**Do not open a public issue or pull request for an exploitable vulnerability.**
 
-Preferred contact: [support@agataproxima.com](mailto:support@agataproxima.com) with the subject **Private security report — Proxima Engine**. Do not include live secrets or customer data in the email.
+Email **[support@agataproxima.com](mailto:support@agataproxima.com)** with the subject **Private Security Report — Proxima Engine**. This is the private reporting contact for vulnerabilities in this public repository.
 
-Include, when safe:
-- Affected repository, commit SHA or release and the Engine version.
-- Impact and conditions required to reproduce the issue.
-- A minimal proof of concept using synthetic data.
-- Relevant sanitized logs and any known mitigations.
+Include the affected repository, commit SHA or release, impact, safe reproduction steps, and a proposed mitigation when available. Do not include live credentials, signing keys, customer information, tenant records, or other secrets. Maintainers will use the contact details in the report to coordinate follow-up and responsible disclosure.
 
-Please allow maintainers reasonable time to investigate, coordinate a fix, and prepare a responsible disclosure before publishing exploit details.
+Please allow maintainers reasonable time to investigate, coordinate a fix, and prepare responsible disclosure before publishing exploit details.
 
 ## Scope
 
 In scope: vulnerabilities in the source code and documented behavior of this public Engine repository, including tenant-token validation, PostgreSQL protocol handling, role routing, TLS configuration, local status/metrics surfaces, attestation, and break-glass/replay controls.
 
-Out of scope for this repository's public issue tracker: requests to expose private hosted-service code, account data, credentials, private endpoints, or another customer's information. For hosted account or billing questions, use the official [website](https://agataproxima.com) and [support contact](mailto:support@agataproxima.com).
+Hosted account data, private Cloud source, internal hosted endpoints, credentials, and another customer's information are outside the scope of this public repository.
+
+For hosted account or billing questions, use [support@agataproxima.com](mailto:support@agataproxima.com) or the official [Agata Proxima website](https://agataproxima.com).
 
 ## Safe testing
 
 - Test only systems you own or have explicit permission to assess.
 - Use disposable databases and synthetic tenants.
-- Avoid denial-of-service testing against shared or hosted services without written authorization.
+- Obtain written authorization before testing shared or hosted services.
 - Do not access, modify, or retain another tenant's data.
 - Redact secrets and personal data before sharing diagnostics.
 
-## Supported versions and verification
+## Information to include
 
-When reporting a bug, include the exact commit SHA, operating system, Rust toolchain, configuration names (never secret values), and the smallest safe reproduction.
+When reporting an Engine issue, include the exact commit SHA, operating system, Rust toolchain, relevant configuration variable names (never secret values), and the smallest safe reproduction.
 
-## Security claims
+## Security model
 
-A passing CI run shows that the configured automated checks passed for that commit; it is not a security certification or proof that every deployment is safe. Operators remain responsible for PostgreSQL grants/RLS, trusted token issuance, TLS, secret management, network exposure, backups, and testing denied access paths. See [the Engine security model](docs/SECURITY.md).
+The Engine verifies signed tenant context when enforcement is configured and maps the verified tenant to a PostgreSQL role. PostgreSQL grants and RLS policies enforce row-level access. Operators configure trusted token issuance, TLS, secret storage, network exposure, backups, and deployment verification.
+
+See [the Engine security architecture](docs/SECURITY.md), [Tenant isolation](docs/TENANT_ISOLATION.md), and [Deployment](docs/DEPLOYMENT.md).

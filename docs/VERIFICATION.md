@@ -1,21 +1,20 @@
 # Verification and test guide
 
-Use these commands to validate the Engine source you have checked out. Record the commit SHA and toolchain with your results.
+Use this guide to run the Engine test suite, exercise PostgreSQL tenant isolation, verify PgBouncer transaction-pool separation, inspect runtime endpoints, and validate signed local evidence. Record the exact source commit and toolchain with each result.
 
 ## Verification workflow
 
 ```mermaid
 flowchart TD
-  Source[Engine source and configuration] --> Tests[Unit and integration tests]
-  Tests --> Isolation[Tenant isolation positive and negative tests]
-  Isolation --> Runtime[Health, metrics and runtime checks]
-  Runtime --> Evidence[Attestation or break-glass evidence where configured]
-  Evidence --> Review[Review recorded evidence and configuration]
+  Source[Engine source and configuration] --> Rust[Unit and integration tests]
+  Rust --> PG[PostgreSQL-backed tenant tests]
+  PG --> Pool[PgBouncer tenant-pool test]
+  Pool --> Runtime[Health, metrics and SQL checks]
+  Runtime --> Evidence[Attestation and recorded evidence]
+  Evidence --> Review[Review commit, configuration and results]
 ```
 
-Attestation and break-glass commands are operational tools, not a substitute for testing actual database permissions and RLS policies. Follow the command requirements later in this guide and protect signing keys and generated evidence.
-
-## 1. Run unit and integration tests
+## 1. Run Rust tests and build the release binary
 
 ```bash
 cargo test -p proxima-engine
@@ -23,11 +22,12 @@ cargo build -p proxima-engine --release
 ```
 
 The PostgreSQL-backed integration test connects to a local PostgreSQL service at `127.0.0.1:5432` using:
+
 - Database: `proxima_dev`
 - User: `proxima`
 - Password: `proxima-dev-only`
 
-For a local run of the integration test, start a disposable PostgreSQL 17 instance with those credentials. Example:
+Start a disposable PostgreSQL 17 instance:
 
 ```bash
 docker run --rm --name proxima-ci-postgres \
@@ -37,13 +37,51 @@ docker run --rm --name proxima-ci-postgres \
   -p 127.0.0.1:5432:5432 postgres:17
 ```
 
-Keep it running in one terminal, then run `cargo test -p proxima-engine` in another. The test creates tenant roles and an RLS table in that disposable database. Do not point this test at a database containing data you need; it drops the `proxima_e2e` schema and changes the test roles.
+Keep it running in one terminal, then run the Rust test command in another. The integration test creates the `proxima_e2e` schema and tenant roles in that database. Use a disposable instance because the test drops and recreates its test schema.
 
-The GitHub Actions workflow provisions this disposable PostgreSQL service automatically.
+GitHub Actions provisions the PostgreSQL service automatically.
 
-## 2. Test the running HTTP surfaces
+## 2. Run the two-tenant acceptance test
 
-With the [quickstart](QUICKSTART.md) running:
+```bash
+bash scripts/test-two-tenants.sh
+```
+
+This acceptance script creates two non-superuser tenant roles, enables RLS, starts the Engine with tenant-token enforcement, and checks:
+
+- Tenant A sees only Tenant A's record.
+- Tenant B sees only Tenant B's record.
+- Tenant A's cross-tenant read returns zero rows.
+- Tenant A's cross-tenant write is rejected.
+- An invalid tenant token is rejected.
+
+The script runs against the disposable PostgreSQL service configured by CI. Use a disposable local database with the documented credentials when running it manually.
+
+## 3. Run the PgBouncer tenant-pool integration test
+
+```bash
+bash scripts/test-pgbouncer-pooling.sh
+```
+
+This dedicated integration test starts an isolated Docker Compose project containing PostgreSQL, PgBouncer 1.24.1, and Proxima Engine. It generates signed tenant tokens, provisions two least-privilege tenant roles, and exercises the Engine-to-PgBouncer-to-PostgreSQL path.
+
+The test verifies:
+
+- Tenant A and Tenant B each read only their own records.
+- Five sequential connections for Tenant A reuse the same PostgreSQL backend PID.
+- Five sequential connections for Tenant B reuse the same PostgreSQL backend PID.
+- Tenant A and Tenant B use distinct PostgreSQL backend PIDs and separate role-specific PgBouncer pools.
+- Cross-tenant reads return zero rows for both tenants.
+- A cross-tenant write is rejected by RLS.
+- Missing and invalid tenant tokens are rejected.
+
+The test uses an isolated Compose project and removes its own containers and volumes on exit. Stop any other local stack using the same host ports before running it.
+
+The recorded [PgBouncer evidence](../evidence/pgbouncer-transaction-pooling.txt) contains the earlier local execution environment and observed backend PID values.
+
+## 4. Verify local HTTP surfaces
+
+With the [Quickstart](QUICKSTART.md) stack running:
 
 ```bash
 curl -fsS http://127.0.0.1:9090/healthz
@@ -51,55 +89,54 @@ curl -fsS http://127.0.0.1:9080/api/status
 curl -fsS http://127.0.0.1:9090/metrics
 ```
 
-A health response alone is not a database test. Run a query through port 6432 as shown in the quickstart.
+Then run a SQL query through port 6432. Health confirms that the HTTP handler responds; the SQL query exercises the PostgreSQL protocol path.
 
-## 3. Verify an attestation ledger
+## 5. Verify an attestation ledger
 
-The verifier checks the local hash-linked ledger and validates its signatures. Point it at the ledger you want to inspect and supply the same signing key, organization ID, and node ID used when the records were created. The CLI does not automatically read the Engine identity JSON file.
+The verifier checks the local hash-linked ledger and validates its signatures. Supply the same signing key, organization ID, and node ID used when records were created. The CLI reads the configured ledger path; it does not automatically extract credentials from the Engine identity JSON file.
 
 ```bash
 export PROXIMA_ATTESTATION_LEDGER_PATH=data/proxima-attestations.jsonl
 export PROXIMA_ORGANIZATION_ID='<recorded-organization-id>'
 export PROXIMA_NODE_ID='<recorded-node-id>'
-# Prefer the node identity key (hex) or the configured attestation signing key.
 export PROXIMA_NODE_SIGNING_KEY_HEX='<64-hex-character-node-key>'
 cargo run -p proxima-engine --bin proxima-attest-verify
 ```
 
 - Exit code 0: one or more records were present and the chain verified.
 - Exit code 2: no records exist or the chain is invalid.
-- Exit code 1: the ledger could not be read or verified because of an I/O/runtime error.
+- Exit code 1: the ledger could not be read or verification encountered an I/O/runtime error.
 
-An empty ledger is not proof that attestation succeeded. Configure the signing credential and the required attestation settings before expecting records. See [Configuration](CONFIGURATION.md).
+Configure the signing credential and required attestation settings before expecting records. See [Configuration](CONFIGURATION.md).
 
-## 4. Generate an emergency token
+## 6. Generate an emergency token
 
-The command-line tool issues a short-lived, signed break-glass token for a tenant. It requires the same tenant signing secret configured in the Engine:
+The command-line tool issues a short-lived signed break-glass token for a tenant:
 
 ```bash
 export PROXIMA_TENANT_SIGNING_KEY='<local-test-secret-at-least-32-bytes>'
 cargo run -p proxima-engine --bin proxima-break-glass-token -- tenant_a 300
 ```
 
-The lifetime is limited to 900 seconds (15 minutes). The Engine records used nonces in its replay directory and rejects token reuse. Keep the token private; this command prints a credential to stdout. Do not generate emergency tokens for routine access or store them in logs.
+The maximum lifetime is 900 seconds (15 minutes). The Engine records used nonces in its replay directory and rejects token reuse. Keep generated tokens private and out of logs.
 
-## 5. CI checks
+## 7. CI workflow
 
-The repository workflow runs the PostgreSQL-backed test suite and release build on pushes to `main` and pull requests targeting `main`. Review the exact [GitHub Actions run](https://github.com/Agata-Proxima/proxima-engine/actions) for your commit.
+The [Rust CI workflow](https://github.com/Agata-Proxima/proxima-engine/actions/workflows/ci.yml) runs on pushes to `main` and pull requests targeting `main`. It provisions PostgreSQL 17, runs the Python CLI tests, executes `cargo test -p proxima-engine`, builds the release binary, runs the two-tenant acceptance script, builds the Docker image, and runs the PgBouncer tenant-pool integration test.
 
-CI success does not replace TLS verification, production-like integration tests, independent security review, backup/restore testing, or deployment acceptance.
+A green workflow run is direct evidence that those configured checks passed for its commit. For deployment acceptance, also verify the target environment's TLS, database roles/RLS, network policy, persistence, and recovery procedures.
 
+## Evidence record
 
-## Evidence checklist
+For each verification run, record:
 
-For a useful verification record, capture:
-
-- The exact Git commit SHA and, for containers, image digest.
+- Exact Git commit SHA and container image digest, when applicable.
 - Operating system, CPU architecture, Rust toolchain, and container runtime versions.
-- Which tests ran and their actual exit status.
-- Whether PostgreSQL-backed tests used a disposable database and completed successfully.
-- The results of a positive tenant access test and a negative cross-tenant access test.
-- TLS certificate validation and connection behavior for the intended deployment.
-- The attestation verifier command, trusted public-key fingerprint, expected organization/node context, and result, without recording private keys or tokens.
+- Test commands, exit status, and relevant output.
+- PostgreSQL and PgBouncer versions and whether the database was disposable.
+- Positive tenant access and denied cross-tenant access results.
+- Backend PID observations for each tenant role.
+- TLS validation and connection behavior for the target environment.
+- Attestation verifier command, trusted key fingerprint, organization/node context, and result.
 
-A green CI badge means only that the configured workflow passed for the referenced commit. It does not mean a customer's runtime configuration, database grants, RLS policies, network exposure, or incident procedures have been verified. See [Security](SECURITY.md) and [Deployment](DEPLOYMENT.md).
+Never include private keys, passwords, signed tokens, or customer data in published evidence.

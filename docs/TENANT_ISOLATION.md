@@ -1,12 +1,12 @@
-# Tenant isolation: a runnable example
+# Tenant isolation: PostgreSQL roles, signed context, and RLS
 
-This tutorial configures PostgreSQL roles and Row-Level Security (RLS), enables Proxima tenant-token verification, and sends a signed token through the PostgreSQL startup options. It is a local learning example, not a production security certification.
+This guide configures two tenant roles, enables PostgreSQL Row-Level Security (RLS), signs tenant context, and sends each tenant through Proxima Engine. It finishes with positive and negative SQL checks so the database boundary is visible and reproducible.
 
-Start the [Compose quickstart](QUICKSTART.md) first. These commands use the disposable local database and the local-only password.
+Run the commands against the disposable local database from the [Quickstart](QUICKSTART.md).
 
 ## 1. Create two tenant roles and an RLS-protected table
 
-Run this from the repository root:
+Run from the repository root:
 
 ```bash
 docker compose -f compose.dev.yaml exec -T postgres psql -U proxima -d appdb <<'SQL'
@@ -18,7 +18,7 @@ CREATE ROLE proxima_tenant_tenant_a LOGIN PASSWORD 'tenant-a-password' NOSUPERUS
 CREATE ROLE proxima_tenant_tenant_b LOGIN PASSWORD 'tenant-b-password' NOSUPERUSER NOBYPASSRLS;
 
 CREATE SCHEMA tenant_demo;
-CREATE TABLE IF NOT EXISTS tenant_demo.records (
+CREATE TABLE tenant_demo.records (
   id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   tenant_id text NOT NULL,
   secret text NOT NULL
@@ -45,25 +45,41 @@ GRANT USAGE, SELECT ON SEQUENCE tenant_demo.records_id_seq TO proxima_tenant_ten
 SQL
 ```
 
-For a repeatable run, reset this disposable schema and roles first or change the example names. The roles are ordinary PostgreSQL logins; they are not superusers and cannot bypass RLS. In production, use separate least-privilege provisioning credentials and review grants carefully.
+The roles are ordinary PostgreSQL logins, not superusers, and do not have `BYPASSRLS`. Each role receives a policy that limits its access to its own tenant identifier.
 
 ## 2. Enable tenant-token enforcement
 
-Create a strong key. On Linux/macOS:
+Generate a strong local signing key:
 
 ```bash
 openssl rand -hex 32
 ```
 
-For the local CLI path, run `python3 scripts/agata.py init` first and copy the **literal** `tenant_signing_key` from `.proxima-dev/dev-config.json` into `.env` as `PROXIMA_TENANT_SIGNING_KEY=<local-key>`. Treat it as a secret. Alternatively, use `openssl rand -hex 32` and sign tokens using the same literal key bytes. Restart the Engine so it reads the value:
+For the local CLI path, run `python scripts/agata.py init` and copy the literal `tenant_signing_key` from `.proxima-dev/dev-config.json` into the Engine environment as `PROXIMA_TENANT_SIGNING_KEY`. Treat the key as a secret.
+
+For the Compose Engine, export the key before recreating the Engine container:
 
 ```bash
+export PROXIMA_TENANT_SIGNING_KEY='<same-local-key>'
 docker compose -f compose.dev.yaml up -d --build --force-recreate engine
 ```
 
-The same exact key must be used by the trusted service that signs tenant tokens. Do not place the signing key in a browser or mobile app.
+The trusted service that signs tenant tokens must use the same key. Keep the signing key on trusted server-side infrastructure; never place it in browser or mobile code.
 
-## 3. Sign a short-lived tenant token
+## 3. Mint short-lived tenant tokens
+
+For Tenant A:
+
+```bash
+export PROXIMA_TENANT_SIGNING_KEY='<same-local-key>'
+TENANT_TOKEN_A=$(python scripts/agata.py token --tenant tenant_a --ttl 300)
+```
+
+For Tenant B:
+
+```bash
+TENANT_TOKEN_B=$(python scripts/agata.py token --tenant tenant_b --ttl 300)
+```
 
 The token format is:
 
@@ -73,66 +89,80 @@ v1.<tenant_id>.<expiry_unix_seconds>.<hex_hmac_sha256>
 
 The HMAC-SHA256 signature covers the exact string `v1.<tenant_id>.<expiry_unix_seconds>`. Tenant IDs may contain ASCII letters, numbers, hyphens, and underscores. The Engine rejects expired, malformed, or incorrectly signed tokens.
 
-For a **local test only**, mint a five-minute token with the Engine CLI (after running `init`):
-
-```bash
-export PROXIMA_TENANT_SIGNING_KEY='<paste-the-same-local-key>'
-TENANT_TOKEN=$(python3 scripts/agata.py token --tenant tenant_a --ttl 300)
-```
-
-In a real application, generate tokens only on a trusted server after checking the authenticated user's organization and tenant membership. Never accept an arbitrary tenant ID directly from an untrusted client.
+In an application, mint tokens only on a trusted server after verifying the authenticated user's tenant membership.
 
 ## 4. Connect as Tenant A through Proxima
 
-The Engine uses the signed tenant ID to change the upstream PostgreSQL startup username to `proxima_tenant_tenant_a`. The client sends that role's password while connecting to the proxy:
+The Engine derives the upstream PostgreSQL role from the verified tenant ID. The client connects to the proxy as `proxima` and supplies the password for the mapped tenant role:
 
 ```bash
-PGPASSWORD='tenant-a-password' PGOPTIONS="-c proxima_tenant_token=$TENANT_TOKEN" \
+PGPASSWORD='tenant-a-password' PGOPTIONS="-c proxima_tenant_token=$TENANT_TOKEN_A" \
   psql "host=127.0.0.1 port=6432 dbname=appdb user=proxima sslmode=disable" \
   -c "SELECT tenant_id, secret FROM tenant_demo.records;"
 ```
 
-Expected: only the `tenant_a / A-secret` row is returned. You can also verify the other tenant's row is invisible:
+Expected result: only `tenant_a | A-secret`.
+
+Check the cross-tenant read:
 
 ```bash
-docker compose -f compose.dev.yaml exec \\
-  -e PGPASSWORD=tenant-a-password \\
-  -e "PGOPTIONS=-c proxima_tenant_token=$TENANT_TOKEN" \\
-  postgres psql "host=engine port=6432 dbname=appdb user=proxima sslmode=disable" \\
+PGPASSWORD='tenant-a-password' PGOPTIONS="-c proxima_tenant_token=$TENANT_TOKEN_A" \
+  psql "host=127.0.0.1 port=6432 dbname=appdb user=proxima sslmode=disable" \
   -c "SELECT count(*) FROM tenant_demo.records WHERE tenant_id = 'tenant_b';"
 ```
 
-Expected count: `0`.
+Expected result: `0`.
 
-Test the negative case:
+Check the cross-tenant write:
 
 ```bash
-PGPASSWORD='tenant-a-password' PGOPTIONS="-c proxima_tenant_token=$TENANT_TOKEN" \
+PGPASSWORD='tenant-a-password' PGOPTIONS="-c proxima_tenant_token=$TENANT_TOKEN_A" \
   psql "host=127.0.0.1 port=6432 dbname=appdb user=proxima sslmode=disable" \
-  -c "INSERT INTO tenant_demo.records (tenant_id, secret) VALUES ('tenant_b', 'should be denied');"
+  -c "INSERT INTO tenant_demo.records (tenant_id, secret) VALUES ('tenant_b', 'denied');"
 ```
 
-Expected: PostgreSQL rejects the cross-tenant insert due to the RLS policy.
+Expected result: PostgreSQL rejects the insert under the RLS policy.
 
-## 5. What this example demonstrates
+## 5. Connect as Tenant B
 
-- A valid signed tenant token is checked at connection startup.
-- The Engine maps the tenant ID to the configured role prefix plus the normalized tenant ID.
-- The private token startup option is removed before forwarding the packet.
-- PostgreSQL role grants and RLS policies enforce the row boundary.
-- A missing or invalid token is rejected when `PROXIMA_TENANT_SIGNING_KEY` is configured.
+```bash
+PGPASSWORD='tenant-b-password' PGOPTIONS="-c proxima_tenant_token=$TENANT_TOKEN_B" \
+  psql "host=127.0.0.1 port=6432 dbname=appdb user=proxima sslmode=disable" \
+  -c "SELECT tenant_id, secret FROM tenant_demo.records;"
+```
 
-This example does **not** remove the need to secure the direct PostgreSQL network path, the database administrator credentials, signing-key storage, TLS, backup access, or application authorization. Do not let production application traffic connect directly to PostgreSQL as a privileged role. Review [Security](SECURITY.md) and [Deployment](DEPLOYMENT.md) before adapting this pattern.
+Expected result: only `tenant_b | B-secret`.
 
+## 6. What the tests verify
 
-## Before adapting this lab
+- A valid signed tenant token is checked during PostgreSQL connection startup.
+- The Engine maps the verified tenant ID to the configured tenant-role prefix.
+- The private token startup option is removed before the startup packet is forwarded.
+- Tenant A and Tenant B receive their own PostgreSQL role and RLS policy.
+- Cross-tenant reads return zero rows.
+- Cross-tenant writes are rejected by PostgreSQL.
+- Missing or invalid tenant context is rejected when `PROXIMA_TENANT_SIGNING_KEY` is configured.
 
-- Run the example only against a disposable database with synthetic tenant records.
-- Ensure application roles are not superusers and do not have `BYPASSRLS` privileges.
-- Verify that each tenant has the intended database role mapping and that the token issuer cannot be called by an untrusted client.
-- Test a permitted read for tenant A and an attempted read of tenant B's row using the same tenant-A context. The denied case is essential evidence.
-- Test writes as well as reads if your application supports them; RLS policies must cover the operations your workload uses.
-- Check connection pooling and transaction/session state so one request's tenant context cannot bleed into another request.
-- Re-run negative tests after policy, role, driver, proxy, or pool configuration changes.
+## 7. Verify connection pooling
 
-A tutorial pass is not a substitute for reviewing the real schema and policy set. PostgreSQL superusers and roles with RLS bypass privileges can defeat ordinary row policies. Keep administrative access separate from application traffic and review [Security](SECURITY.md) and [Deployment](DEPLOYMENT.md).
+Run the dedicated [PgBouncer tenant-pool integration test](../scripts/test-pgbouncer-pooling.sh):
+
+```bash
+bash scripts/test-pgbouncer-pooling.sh
+```
+
+The test starts an isolated Compose project, sends Tenant A and Tenant B through Proxima Engine and PgBouncer transaction pooling, and checks five sequential connections per tenant. Each tenant's connections reuse the same backend PID; the two tenant roles use distinct backend PIDs and separate PgBouncer pools. It also checks cross-tenant read/write denial and missing/invalid token rejection.
+
+The same test runs in the repository's GitHub Actions workflow. The earlier local execution record is available in [PgBouncer transaction-pooling evidence](../evidence/pgbouncer-transaction-pooling.txt).
+
+## Operational requirements
+
+- Use a disposable database with synthetic tenant records for this walkthrough.
+- Keep tenant roles non-superuser and without `BYPASSRLS`.
+- Apply RLS policies to every tenant-scoped table and every relevant operation.
+- Protect the token-signing key and issue tokens only after trusted application authorization.
+- Keep direct privileged database paths outside ordinary application traffic.
+- Use verified TLS and restricted network access for deployed environments.
+- Repeat positive and negative tests after changing roles, grants, policies, drivers, proxy settings, or pool configuration.
+
+See [Security](SECURITY.md), [Deployment](DEPLOYMENT.md), and [Verification](VERIFICATION.md).

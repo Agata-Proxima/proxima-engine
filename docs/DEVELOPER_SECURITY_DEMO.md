@@ -1,20 +1,20 @@
-# Demonstrate tenant isolation: four reproducible scenarios
+# Developer security walkthrough: tenant access scenarios
 
-This is a **test plan with expected results**, not a claim that the tests have been executed. Use synthetic data in the disposable local Docker environment.
+This walkthrough provides repeatable commands for checking tenant authentication and PostgreSQL row boundaries with synthetic data. The repository includes an automated PgBouncer transaction-pooling test and recorded execution evidence.
 
 ## Setup
 
-Follow [Quickstart](QUICKSTART.md), then sections 1–3 of [Tenant isolation](TENANT_ISOLATION.md). These steps create tenant A/B roles and RLS policies, enable `PROXIMA_TENANT_SIGNING_KEY`, and create a short-lived signed `TENANT_TOKEN` for `tenant_a`. Run the commands below in that shell.
+Follow [Quickstart](QUICKSTART.md), then complete sections 1–3 of [Tenant isolation](TENANT_ISOLATION.md). The setup creates Tenant A and Tenant B roles, applies RLS policies, enables `PROXIMA_TENANT_SIGNING_KEY`, and generates a short-lived token for Tenant A.
 
 ## 1. Valid tenant context
 
 ```bash
-PGPASSWORD='tenant-a-password' PGOPTIONS="-c proxima_tenant_token=$TENANT_TOKEN" \
+PGPASSWORD='tenant-a-password' PGOPTIONS="-c proxima_tenant_token=$TENANT_TOKEN_A" \
   psql "host=127.0.0.1 port=6432 dbname=appdb user=proxima sslmode=disable" \
   -c "SELECT tenant_id, secret FROM tenant_demo.records;"
 ```
 
-**Expected:** only `tenant_a | A-secret`.
+Expected: only `tenant_a | A-secret`.
 
 ## 2. Missing tenant context
 
@@ -24,48 +24,52 @@ PGPASSWORD='tenant-a-password' PGOPTIONS='' \
   -c "SELECT tenant_id FROM tenant_demo.records;"
 ```
 
-**Expected:** connection/startup rejected when token verification is enabled. If the query succeeds, stop and check the Engine configuration and proxy endpoint.
+Expected: connection/startup is rejected while tenant-token enforcement is enabled.
 
-## 3. Attempted cross-tenant access
+## 3. Cross-tenant read and write
+
+Read attempt:
 
 ```bash
-PGPASSWORD='tenant-a-password' PGOPTIONS="-c proxima_tenant_token=$TENANT_TOKEN" \
+PGPASSWORD='tenant-a-password' PGOPTIONS="-c proxima_tenant_token=$TENANT_TOKEN_A" \
   psql "host=127.0.0.1 port=6432 dbname=appdb user=proxima sslmode=disable" \
   -c "SELECT count(*) FROM tenant_demo.records WHERE tenant_id='tenant_b';"
 ```
 
-**Expected:** `0`.
+Expected: `0`.
+
+Write attempt:
 
 ```bash
-PGPASSWORD='tenant-a-password' PGOPTIONS="-c proxima_tenant_token=$TENANT_TOKEN" \
+PGPASSWORD='tenant-a-password' PGOPTIONS="-c proxima_tenant_token=$TENANT_TOKEN_A" \
   psql "host=127.0.0.1 port=6432 dbname=appdb user=proxima sslmode=disable" \
   -c "INSERT INTO tenant_demo.records (tenant_id,secret) VALUES ('tenant_b','denied');"
 ```
 
-**Expected:** PostgreSQL RLS rejects the write.
+Expected: PostgreSQL rejects the write under RLS.
 
-## 4. Tenant context changes between connections
+## 4. Tenant B context
 
-Using the token-generation command in [Tenant isolation](TENANT_ISOLATION.md), generate a **new** token with `tenant="tenant_b"` and save it as `TENANT_B_TOKEN`. Connect using Tenant B's password and `PGOPTIONS="-c proxima_tenant_token=$TENANT_B_TOKEN"`; repeat the first SELECT.
+Generate a Tenant B token using [Tenant isolation](TENANT_ISOLATION.md), connect with Tenant B's database-role password, and repeat the permitted read. Expected result: only `tenant_b | B-secret`.
 
-**Expected:** only `tenant_b | B-secret`. Repeat Tenant A's SELECT on another connection and expect only A's row. This does **not** prove request-level isolation on a shared pooled connection; test pooling separately.
+## Automated PgBouncer transaction-pooling test
 
-## Evidence checklist
+From the repository root, run:
 
-Capture actual outputs, Engine commit SHA, date, PostgreSQL version, and non-sensitive configuration status. Redact signing keys, passwords, tokens, private addresses, and real customer data. Distinguish expected from observed results.
+```bash
+bash scripts/test-pgbouncer-pooling.sh
+```
 
-**Security boundary:** the Engine validates signed tenant context and maps it to a PostgreSQL role; PostgreSQL grants and RLS enforce row-level isolation. This open-source walkthrough does not claim hosted verification or audit records were generated. It does not replace application authorization, TLS, secure token issuance, restricted direct database access, or connection-pool testing.
+The test starts PostgreSQL, PgBouncer 1.24.1, and Proxima Engine in an isolated Compose project. It opens five sequential client connections for each tenant role and checks that each role reuses its own backend PID while Tenant A and Tenant B retain separate backend PIDs and separate PgBouncer pools.
 
-See [Security](SECURITY.md) for production limitations.
+It also verifies tenant-specific reads, cross-tenant read isolation, RLS write rejection, and missing/invalid token rejection. GitHub Actions runs this test on pull requests and pushes to `main`.
 
-## PgBouncer Transaction Pooling
+The earlier local execution record is available in [PgBouncer transaction-pooling evidence](../evidence/pgbouncer-transaction-pooling.txt).
 
-See [PgBouncer Transaction Pooling Evidence](../evidence/pgbouncer-transaction-pooling.txt).
+## Evidence and safe operation
 
-The local Docker Compose integration test routes PostgreSQL traffic through:
+For reproducible results, record the Engine commit, PostgreSQL and PgBouncer versions, exact commands, exit status, and sanitized output. Use synthetic data and redact signing keys, passwords, tokens, private addresses, and customer information.
 
-`Application -> Agata Proxima Engine -> PgBouncer -> PostgreSQL`
+The Engine validates signed tenant context and maps the verified tenant to a PostgreSQL role. PostgreSQL grants and RLS policies enforce the row boundary. The trusted application backend remains responsible for authenticating users and authorizing tenant membership before issuing tenant tokens.
 
-Verified results include tenant-specific reads, cross-tenant read isolation, an earlier RLS write rejection, and backend connection reuse across five sequential client connections per tenant.
-
-The test uses separate PostgreSQL roles for each tenant. The observed backend process IDs were distinct between tenants and repeated across their respective connections.
+See [Security](SECURITY.md), [Deployment](DEPLOYMENT.md), and [Verification](VERIFICATION.md).

@@ -29,7 +29,7 @@ jobs:
         options: >-
           --health-cmd "pg_isready -U proxima -d proxima_dev"
           --health-interval 5s
-          --health-timeout 5s
+          --health-timeout 3s
           --health-retries 12
     steps:
       - name: Check out source
@@ -50,3 +50,5 @@ jobs:
         run: bash scripts/test-two-tenants.sh
       - name: Build container image
         run: docker build -t proxima-engine:ci .
+      - name: Verify PgBouncer tenant-pool isolation
+        run: bash scripts/test-pgbouncer-pooling.sh

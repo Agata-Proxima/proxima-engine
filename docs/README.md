@@ -1,54 +1,52 @@
 # Proxima Engine documentation
 
-Choose a task and go directly to the guide. This repository contains the public Rust Engine and its local operating tools.
+This is the complete technical guide to the public Rust data plane. Choose a task below and go directly to the relevant guide.
 
-## Start here
+## Start and evaluate
 
-- **[Quickstart](QUICKSTART.md)** — start PostgreSQL and Proxima, run a real SQL query through the proxy, and inspect health/metrics.
-- **[What is Proxima? Architecture](ARCHITECTURE.md)** — purpose, request flow, source map, and trust boundaries.
-- **[Tenant isolation tutorial](TENANT_ISOLATION.md)** — create PostgreSQL roles, apply RLS, sign a test tenant token, and verify allowed/denied queries.
-- **[Node identity and enrollment](NODE_ENROLLMENT.md)** — copy/paste the Engine environment, one-time token flow, identity persistence, and 401 troubleshooting.
+- **[Quickstart](QUICKSTART.md)** — launch PostgreSQL and Proxima Engine, run a real SQL query, and inspect health and metrics.
+- **[Architecture](ARCHITECTURE.md)** — understand the request lifecycle, tenant identity, role routing, and system boundaries.
+- **[Tenant isolation](TENANT_ISOLATION.md)** — configure tenant roles and RLS, issue signed context, and run positive and negative access tests.
+- **[Developer security walkthrough](DEVELOPER_SECURITY_DEMO.md)** — reproduce the tenant-access scenarios and review the recorded PgBouncer evidence.
+- **[Local developer mode](LOCAL_DEVELOPMENT.md)** — generate a local node identity and signed test tokens without a hosted account.
+- **[Engine CLI](CLI.md)** — use the bootstrap, token, diagnostic, and status commands.
 
-## Build and operate
+## Integrate and operate
 
-- [Configuration reference](CONFIGURATION.md) — all supported environment variables, defaults, and validation.
-- [API, health, and metrics](API.md) — actual local HTTP routes, PostgreSQL connection contract, metrics, and enrollment boundary.
-- [Driver integration recipes](INTEGRATIONS.md) — psql, Node.js, Python, and Rust examples.
-- [Container deployment](DEPLOYMENT.md) — Docker build, upstream configuration, TLS, persistence, and production checklist.
-- [Verification and CLI tools](VERIFICATION.md) — automated tests, PostgreSQL integration tests, attestation verification, and break-glass token tool.
-- [Security model and limitations](SECURITY.md) — threat boundaries and safe deployment.
-- [Operations and troubleshooting](OPERATIONS.md) — health checks, metrics, common failures, and shutdown/recovery.
+- [Configuration reference](CONFIGURATION.md) — environment variables, defaults, and validation.
+- [API, health, and metrics](API.md) — PostgreSQL endpoint, local HTTP routes, and Prometheus metrics.
+- [Driver integration recipes](INTEGRATIONS.md) — psql, Node.js, Python, and Rust.
+- [Node identity and enrollment](NODE_ENROLLMENT.md) — node identity persistence and the enrollment contract.
+- [Container deployment](DEPLOYMENT.md) — image build, networking, TLS, persistence, and deployment checklist.
+- [Operations and troubleshooting](OPERATIONS.md) — health checks, logs, monitoring, restart, and recovery.
+- [Verification and test guide](VERIFICATION.md) — automated tests, PostgreSQL integration, CI, and signed evidence.
 
-## Hosted product and support
+## Security and hosted product
 
-```mermaid
-flowchart LR
-  Start[Choose a task] --> Quick[Quickstart]
-  Start --> Build[Build and integrate]
-  Start --> Secure[Security and tenant isolation]
-  Start --> Run[Deploy and operate]
-  Start --> Cloud[Hosted account, node enrollment and billing]
-  Quick --> Architecture[Architecture reference]
-  Build --> API[API and driver guides]
-  Secure --> Verify[Verification and security guides]
-  Run --> Ops[Operations and troubleshooting]
-```
+- [Security architecture and deployment requirements](SECURITY.md) — implemented controls and required runtime configuration.
+- [Hosted Cloud control plane](CLOUD_CONTROL_PLANE.md) — hosted organization workflows and the Engine integration boundary.
+- [Plans and billing](BILLING.md) — hosted plans, checkout, subscription, and account billing.
+- [Support](SUPPORT.md) — contact routes, diagnostics, and issue reporting.
 
-## Hosted product and support
+## Contribute and project policies
 
-- [Cloud control-plane boundary](CLOUD_CONTROL_PLANE.md) — hosted workflow versus self-managed Engine.
-- [Plans and billing](BILLING.md) — how to verify current plan limits and upgrade safely.
-- [Support and troubleshooting](SUPPORT.md) — contact routes, diagnostics, and what not to share.
-
-## Contribute and govern
-
-- [Contributing](../CONTRIBUTING.md) — development setup, tests, and pull request requirements.
-- [Security reporting](../SECURITY.md) — private vulnerability disclosure guidance.
+- [Contributing](../CONTRIBUTING.md) — development setup, test commands, and pull-request requirements.
+- [Security policy](../SECURITY.md) — private vulnerability disclosure.
 - [Code of Conduct](../CODE_OF_CONDUCT.md) — community expectations.
-- [Copyright, license, and trademarks](../COPYRIGHT.md) — license scope for this repository.
+- [Copyright and brand](../COPYRIGHT.md) — source license, trademarks, and reserved artwork.
 - [MIT License](../LICENSE) — terms for covered source and documentation.
-- [GitHub Issues](https://github.com/Agata-Proxima/proxima-engine/issues) · [Pull requests](https://github.com/Agata-Proxima/proxima-engine/pulls) · [Releases](https://github.com/Agata-Proxima/proxima-engine/releases) · [CI](https://github.com/Agata-Proxima/proxima-engine/actions)
+- [Open-source scope](OPEN_SOURCE_SCOPE.md) — self-managed use, MIT license, and support boundaries.
 
-## Scope
+## External project resources
 
-The Engine is independently buildable and testable. A separate compatible control plane may issue node enrollment tokens and receive optional signed evidence, but its management endpoints are not served by this Engine. See the public [Agata Proxima website](https://agataproxima.com) for the separate hosted service.
+- [Agata Proxima website](https://agataproxima.com)
+- [GitHub repository](https://github.com/Agata-Proxima/proxima-engine)
+- [GitHub Actions](https://github.com/Agata-Proxima/proxima-engine/actions)
+- [GitHub issues](https://github.com/Agata-Proxima/proxima-engine/issues)
+- [GitHub pull requests](https://github.com/Agata-Proxima/proxima-engine/pulls)
+- [GitHub releases](https://github.com/Agata-Proxima/proxima-engine/releases)
+- [Discord community](https://discord.gg/xsYSuDMzg)
+
+## Product boundary
+
+Proxima Engine is independently buildable and testable. A compatible control plane can issue node-enrollment credentials and receive optional signed evidence. The hosted Agata Proxima Cloud application is a separate product; its private management source and hosted account workflows are not part of this repository.

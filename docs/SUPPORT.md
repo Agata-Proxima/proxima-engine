@@ -1,52 +1,47 @@
-# Support and troubleshooting
+# Support and issue reporting
 
-## Find the right route
+Use the route that matches the request.
 
-```mermaid
-flowchart TD
-  Need[What do you need?] --> Setup[Setup or integration]
-  Need --> Account[Account, team, node or billing]
-  Need --> Bug[Engine bug]
-  Need --> Security[Security vulnerability]
-  Setup --> Docs[Quickstart and technical docs]
-  Account --> Website[agataproxima.com]
-  Bug --> Issues[Public Engine GitHub Issues]
-  Security --> Private[Private report to support@agataproxima.com]
-```
+## Technical documentation
 
-- **Email support:** [support@agataproxima.com](mailto:support@agataproxima.com)
-- **Hosted account and billing:** [agataproxima.com](https://agataproxima.com)
-- **Engine source issues:** [GitHub Issues](https://github.com/Agata-Proxima/proxima-engine/issues)
+- [Quickstart](QUICKSTART.md) — start the Engine and query PostgreSQL.
+- [Configuration](CONFIGURATION.md) — environment variables and defaults.
+- [Operations](OPERATIONS.md) — logs, health checks, and troubleshooting.
+- [Tenant isolation](TENANT_ISOLATION.md) — tenant roles, signed context, and RLS verification.
 
-## Find the right route
+## Public Engine issues
 
-- Setup: [Quickstart](QUICKSTART.md), [Configuration](CONFIGURATION.md), [Operations](OPERATIONS.md).
-- Tenant access concerns: stop sensitive traffic and review [Security](SECURITY.md) and [Tenant isolation](TENANT_ISOLATION.md).
-- Hosted account, team, node, or billing questions: use [agataproxima.com](https://agataproxima.com).
-- Public Engine bugs: file a [GitHub issue](https://github.com/Agata-Proxima/proxima-engine/issues) with a minimal reproduction and commit SHA.
-- Potential vulnerability: use the private process in the repository [SECURITY.md](../SECURITY.md), not a public issue.
+Use [GitHub Issues](https://github.com/Agata-Proxima/proxima-engine/issues) for reproducible Engine bugs, driver integration problems, documentation corrections, and feature requests.
 
-## Contact
-
-Intended public contact: [support@agataproxima.com](mailto:support@agataproxima.com). The mailbox must be configured and monitored before it is relied upon. If email fails, use the official website.
-
-## Include in a support request
+Include:
 
 - Engine version or exact commit SHA.
-- Operating system, container runtime, and Rust version if relevant.
-- Exact command/request, sanitized response, and expected behavior.
-- Configuration variable names, never their secret values.
+- Operating system, container runtime, and Rust version where relevant.
+- Exact command or request, sanitized response, and expected behavior.
+- Configuration variable names, without secret values.
 - A minimal reproduction using synthetic data.
 
-Never send passwords, signing keys, raw access tokens, payment data, customer records, private keys, or unredacted tenant logs.
+## Support, hosted account, and billing
+
+For technical support, hosted account, organization, node-management, plan, and billing questions, email **[support@agataproxima.com](mailto:support@agataproxima.com)** or visit the official [Agata Proxima website](https://agataproxima.com).
+
+The hosted product is separate from the public Engine issue tracker.
+
+## Security reports
+
+For a suspected vulnerability in the public Engine, email **[support@agataproxima.com](mailto:support@agataproxima.com)** with the subject **Private Security Report — Proxima Engine**. Do not publish exploitable details in public issues or pull requests. Include the affected commit, impact, and safe reproduction steps; do not attach live credentials, signing keys, customer records, or unredacted tenant data.
+
+See the repository [Security Policy](../SECURITY.md).
+
+## Information to keep private
+
+Never include passwords, signing keys, access tokens, payment data, customer records, private keys, or unredacted tenant logs in a public support request or issue.
 
 ## First checks
 
-1. Check [health and status routes](API.md).
+1. Check the [health and status routes](API.md).
 2. Confirm the upstream PostgreSQL host, port, database, and credentials.
 3. Check DNS and connectivity from the Engine runtime.
 4. Compare environment variable names with [Configuration](CONFIGURATION.md).
-5. For tenant issues, test allowed and denied access paths using [Tenant isolation](TENANT_ISOLATION.md).
-6. If security is implicated, stop public disclosure and use the private vulnerability route.
-
-This guide does not imply a response-time or uptime SLA.
+5. For tenant issues, run allowed and denied access tests using [Tenant isolation](TENANT_ISOLATION.md).
+6. For suspected vulnerabilities, use the private email reporting route above.

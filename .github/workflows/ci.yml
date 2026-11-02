@@ -50,3 +50,27 @@ jobs:
         run: bash scripts/test-two-tenants.sh
       - name: Build container image
         run: docker build -t proxima-engine:ci .
+      - name: Verify local Compose, PgBouncer, and Engine SQL path
+        shell: bash
+        run: |
+          set -euo pipefail
+          trap 'docker compose -f compose.dev.yaml down -v' EXIT
+          docker compose -f compose.dev.yaml up --build -d
+
+          for attempt in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:9090/healthz >/dev/null; then
+              break
+            fi
+            sleep 2
+          done
+
+          curl -fsS http://127.0.0.1:9090/healthz
+          docker compose -f compose.dev.yaml exec -T postgres psql -v ON_ERROR_STOP=1 -U proxima -d appdb \
+            -c "CREATE TABLE quickstart_ci (message text NOT NULL); INSERT INTO quickstart_ci VALUES ('hello through Proxima');"
+
+          result="$(docker compose -f compose.dev.yaml exec -T postgres psql -X -A -t -v ON_ERROR_STOP=1 \
+            "host=engine port=6432 dbname=appdb user=proxima password=local-only-change-me sslmode=disable" \
+            -c "SELECT message FROM quickstart_ci;")"
+
+          test "$result" = "hello through Proxima"
+          echo "PASS: Compose Engine -> PgBouncer transaction pool -> PostgreSQL SQL path"

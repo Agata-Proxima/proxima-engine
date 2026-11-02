@@ -143,13 +143,17 @@ Expected result: only `tenant_b | B-secret`.
 - Cross-tenant writes are rejected by PostgreSQL.
 - Missing or invalid tenant context is rejected when `PROXIMA_TENANT_SIGNING_KEY` is configured.
 
-## 7. Connection pooling and backend reuse
+## 7. Verify connection pooling
 
-The repository includes [PgBouncer transaction-pooling evidence](../evidence/pgbouncer-transaction-pooling.txt) from a local Docker environment using PgBouncer 1.24.1 and PostgreSQL 17.
+Run the dedicated [PgBouncer tenant-pool integration test](../scripts/test-pgbouncer-pooling.sh):
 
-The recorded run opened five sequential client connections for Tenant A and five for Tenant B. Tenant A's connections reused backend PID `9932`; Tenant B's connections reused backend PID `9963`. Each tenant used a distinct PostgreSQL role and the observed backend process IDs remained separate between tenants.
+```bash
+bash scripts/test-pgbouncer-pooling.sh
+```
 
-This demonstrates backend reuse within each tenant role and separate role-specific backend pools in the recorded configuration. The Engine itself keeps each accepted client connection bound to its own upstream session; tenant identity is selected at connection startup and mapped to the database role.
+The test starts an isolated Compose project, sends Tenant A and Tenant B through Proxima Engine and PgBouncer transaction pooling, and checks five sequential connections per tenant. Each tenant's connections reuse the same backend PID; the two tenant roles use distinct backend PIDs and separate PgBouncer pools. It also checks cross-tenant read/write denial and missing/invalid token rejection.
+
+The same test runs in the repository's GitHub Actions workflow. The earlier local execution record is available in [PgBouncer transaction-pooling evidence](../evidence/pgbouncer-transaction-pooling.txt).
 
 ## Operational requirements
 
@@ -161,4 +165,4 @@ This demonstrates backend reuse within each tenant role and separate role-specif
 - Use verified TLS and restricted network access for deployed environments.
 - Repeat positive and negative tests after changing roles, grants, policies, drivers, proxy settings, or pool configuration.
 
-See [Security](SECURITY.md), [Deployment](DEPLOYMENT.md), and [Verification](VERIFICATION.md) for the complete operating procedure.
+See [Security](SECURITY.md), [Deployment](DEPLOYMENT.md), and [Verification](VERIFICATION.md).

@@ -21,17 +21,21 @@ Include:
 - Configuration variable names, without secret values.
 - A minimal reproduction using synthetic data.
 
-## Hosted account and billing
+## Support, hosted account, and billing
 
-For account, organization, node-management, plan, and billing workflows, use the official [Agata Proxima website](https://agataproxima.com). The hosted product is separate from the public Engine issue tracker.
+For technical support, hosted account, organization, node-management, plan, and billing questions, email **[support@agataproxima.com](mailto:support@agataproxima.com)** or visit the official [Agata Proxima website](https://agataproxima.com).
+
+The hosted product is separate from the public Engine issue tracker.
 
 ## Security reports
 
-Do not publish exploitable vulnerabilities, credentials, tenant data, or sensitive logs in public issues. Follow the repository [Security Policy](../SECURITY.md) for private vulnerability reporting.
+For a suspected vulnerability in the public Engine, email **[support@agataproxima.com](mailto:support@agataproxima.com)** with the subject **Private Security Report — Proxima Engine**. Do not publish exploitable details in public issues or pull requests. Include the affected commit, impact, and safe reproduction steps; do not attach live credentials, signing keys, customer records, or unredacted tenant data.
+
+See the repository [Security Policy](../SECURITY.md).
 
 ## Information to keep private
 
-Never include passwords, signing keys, access tokens, payment data, customer records, private keys, or unredacted tenant logs in a support request or issue.
+Never include passwords, signing keys, access tokens, payment data, customer records, private keys, or unredacted tenant logs in a public support request or issue.
 
 ## First checks
 
@@ -40,4 +44,4 @@ Never include passwords, signing keys, access tokens, payment data, customer rec
 3. Check DNS and connectivity from the Engine runtime.
 4. Compare environment variable names with [Configuration](CONFIGURATION.md).
 5. For tenant issues, run allowed and denied access tests using [Tenant isolation](TENANT_ISOLATION.md).
-6. For suspected vulnerabilities, stop public discussion and follow the private reporting process.
+6. For suspected vulnerabilities, use the private email reporting route above.

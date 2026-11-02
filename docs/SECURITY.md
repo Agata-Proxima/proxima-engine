@@ -16,11 +16,11 @@ This guide describes the Engine controls, their activation settings, and the ope
 - **Attestation:** configured records are written to a hash-linked local ledger and signed with the configured signing credential.
 - **Observability:** local health/status endpoints and Prometheus metrics expose process and connection telemetry.
 
-## Tenant-isolation verification
+## Tenant-isolation and pooling verification
 
 The repository includes PostgreSQL-backed integration tests for tenant authentication, tenant-specific reads, denied cross-tenant reads, denied cross-tenant writes, and invalid tenant-token rejection.
 
-The PgBouncer transaction-pooling evidence records five sequential connections per tenant role. The same backend process ID was reused for that tenant's sequential connections, while Tenant A and Tenant B used separate PostgreSQL roles and distinct backend process IDs. See [the recorded evidence](../evidence/pgbouncer-transaction-pooling.txt).
+The dedicated [PgBouncer tenant-pool integration test](../scripts/test-pgbouncer-pooling.sh) starts the local Compose stack and verifies five sequential connections per tenant role. Each tenant reuses its own backend PID, while Tenant A and Tenant B use separate PostgreSQL roles and distinct backend PIDs. The test also checks cross-tenant read/write denial and missing/invalid token rejection. GitHub Actions runs this test on pushes to `main` and pull requests targeting `main`.
 
 The Engine keeps each accepted client connection bound to its own upstream session. When PgBouncer is used, the tenant-specific PostgreSQL role is part of the pool identity, keeping the two tenant roles in separate pools.
 

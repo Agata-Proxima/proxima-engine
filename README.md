@@ -89,7 +89,7 @@ Then follow the [Quickstart](docs/QUICKSTART.md) to create a table, send a real 
 
 ## Verify tenant isolation
 
-The repository includes a runnable two-tenant PostgreSQL integration test and a recorded PgBouncer transaction-pooling evidence report.
+The repository includes PostgreSQL-backed tenant tests and a dedicated [PgBouncer tenant-pool integration test](scripts/test-pgbouncer-pooling.sh), which is run by GitHub Actions.
 
 The verification path covers:
 
@@ -98,9 +98,9 @@ The verification path covers:
 3. Cross-tenant reads return zero visible rows.
 4. Cross-tenant writes are rejected by PostgreSQL RLS.
 5. Missing or invalid signed tenant context is rejected when enforcement is enabled.
-6. PgBouncer transaction-pooling evidence records backend reuse within each tenant role and separate backend identities between the two tenant roles.
+6. Five sequential connections per tenant reuse that tenant role's backend PID, while the two tenant roles use separate backend PIDs through PgBouncer transaction pooling.
 
-See [Tenant isolation](docs/TENANT_ISOLATION.md), [Verification](docs/VERIFICATION.md), and the [PgBouncer transaction-pooling evidence](evidence/pgbouncer-transaction-pooling.txt). The evidence describes the exact test performed and its observed results.
+See [Tenant isolation](docs/TENANT_ISOLATION.md), [Verification](docs/VERIFICATION.md), and the [recorded PgBouncer transaction-pooling evidence](evidence/pgbouncer-transaction-pooling.txt).
 
 ## Documentation
 

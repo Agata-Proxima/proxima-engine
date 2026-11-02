@@ -44,7 +44,7 @@ The Engine keeps each accepted client connection bound to its own upstream sessi
 - Tenant-token enforcement activates when `PROXIMA_TENANT_SIGNING_KEY` is configured. Without that key, the Engine runs without requiring tenant tokens; enable it for tenant-aware traffic.
 - PostgreSQL superusers and roles with `BYPASSRLS` can bypass ordinary RLS policies. Tenant roles must use least privilege.
 - The embedded status page and metrics listener do not authenticate callers. Keep them on loopback or behind a separately authenticated private monitoring layer.
-- The attestation latency value is supplied by the operator. Treat it as operator-provided evidence, not as an Engine-measured benchmark.
+- The attestation latency value is operator-supplied; record benchmark measurements separately from Engine-generated evidence.
 - The local attestation ledger is hash-linked and signed. Protect the ledger, signing key, host, and backups with appropriate access controls.
 - CI reports the result of the configured automated tests for a commit. Deployment configuration, database policies, network controls, and operational procedures must be verified in the target environment.
 
